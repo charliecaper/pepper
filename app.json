@@ -1,12 +1,12 @@
 {
-  "package_id": "com.fzfstudio.",
+  "package_id": "com.caper.pepper",
   "edition": "202601",
   "name": "Pepper",
   "version": "0.1.0",
   "min_app_version": "0.1.0",
   "tagline": "Pepper glasses display",
   "description": "Pepper glasses display",
-  "author": "Whiskee Chen <whiskee.chen@evenrealities.com>",
+  "author": "Charlie",
   "entrypoint": "index.html",
   "permissions": {
     "network": [
