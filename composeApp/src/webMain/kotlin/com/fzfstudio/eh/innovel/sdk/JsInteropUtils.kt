@@ -16,6 +16,11 @@ import kotlinx.coroutines.await
  */
 external fun fetch(url: String): Promise<JsAny>
 
+// ==================== Top-level JS interop helpers for JsInteropUtils ====================
+
+private val jsCallText: JsAny = js("(function(r) { return r.text(); })")
+private val jsGetHostname: JsAny = js("(function() { return window.location.hostname; })")
+
 /**
  * JavaScript interop utility class.
  *
@@ -28,6 +33,14 @@ external fun fetch(url: String): Promise<JsAny>
  */
 object JsInteropUtils {
     
+    // ==================== Browser ====================
+
+    fun getPageHostname(): String? {
+        @Suppress("UNCHECKED_CAST")
+        val getter = jsGetHostname as () -> JsAny?
+        return toStringOrNull(getter())
+    }
+
     // ==================== Type Conversion ====================
 
     /**
@@ -174,14 +187,12 @@ object JsInteropUtils {
      * @return Text content
      */
     suspend fun fetchText(url: String): String {
-        val response = fetch(url).await()
-        // Use js() to call response.text()
-        // Note: js() requires a string expression and can't use variables directly,
-        // so we use a wrapper function
+        val response = fetch(url).await<JsAny>()
+        // Use top-level js() interop function to call response.text()
         @Suppress("UNCHECKED_CAST")
-        val callText = js("(function(r) { return r.text(); })") as (JsAny) -> Promise<JsAny>
+        val callText = jsCallText as (JsAny) -> Promise<JsAny>
         val textPromise = callText(response)
-        val textJs = textPromise.await()
+        val textJs = textPromise.await<JsAny>()
         return toStringOrNull(textJs) ?: ""
     }
     
@@ -314,148 +325,7 @@ object JsInteropUtils {
             value is List<*> -> {
                 buildJsonArray(value)
             }
-            // Handle JsAny types from jsGet, try to identify as array or List
-            // Note: In Kotlin/JS, List is a JavaScript array at runtime, so check for array first
-            value is JsAny -> {
-                // Check if it's an array (by checking length property)
-                // In Kotlin/JS, List is an array at runtime, so isArray should match List
-                if (isArray(value)) {
-                    val length = getArrayLength(value)
-                    val list = mutableListOf<Any?>()
-                    for (i in 0 until length) {
-                        val element = getArrayElement(value, i)
-                        @Suppress("UNCHECKED_CAST")
-                        list.add(element as? Any?)
-                    }
-                    buildJsonArray(list)
-                } else {
-                    // Try to identify as container property types
-                    val className = value::class.simpleName
-                    when (className) {
-                        "ListItemContainerProperty" -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val prop = value as? ListItemContainerProperty
-                            if (prop != null) {
-                                buildJsonObject(
-                                    "itemCount" to prop.itemCount,
-                                    "itemWidth" to prop.itemWidth,
-                                    "isItemSelectBorderEn" to prop.isItemSelectBorderEn,
-                                    "itemName" to prop.itemName,
-                                )
-                            } else {
-                                // If type cast failed, try accessing via properties
-                                buildJsonObject(
-                                    "itemCount" to getIntProperty(value, "itemCount"),
-                                    "itemWidth" to getIntProperty(value, "itemWidth"),
-                                    "isItemSelectBorderEn" to getIntProperty(value, "isItemSelectBorderEn"),
-                                    "itemName" to getProperty(value, "itemName"),
-                                )
-                            }
-                        }
-                        "ListContainerProperty" -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val prop = value as? ListContainerProperty
-                            if (prop != null) {
-                                buildJsonObject(
-                                    "xPosition" to prop.xPosition,
-                                    "yPosition" to prop.yPosition,
-                                    "width" to prop.width,
-                                    "height" to prop.height,
-                                    "borderWidth" to prop.borderWidth,
-                                    "borderColor" to prop.borderColor,
-                                    "borderRdaius" to prop.borderRdaius,
-                                    "paddingLength" to prop.paddingLength,
-                                    "containerID" to prop.containerID,
-                                    "containerName" to prop.containerName,
-                                    "itemContainer" to prop.itemContainer,
-                                    "isEventCapture" to prop.isEventCapture,
-                                )
-                            } else {
-                                // Access via properties
-                                buildJsonObject(
-                                    "xPosition" to getIntProperty(value, "xPosition"),
-                                    "yPosition" to getIntProperty(value, "yPosition"),
-                                    "width" to getIntProperty(value, "width"),
-                                    "height" to getIntProperty(value, "height"),
-                                    "borderWidth" to getIntProperty(value, "borderWidth"),
-                                    "borderColor" to getIntProperty(value, "borderColor"),
-                                    "borderRdaius" to getIntProperty(value, "borderRdaius"),
-                                    "paddingLength" to getIntProperty(value, "paddingLength"),
-                                    "containerID" to getIntProperty(value, "containerID"),
-                                    "containerName" to getStringProperty(value, "containerName"),
-                                    "itemContainer" to getProperty(value, "itemContainer"),
-                                    "isEventCapture" to getIntProperty(value, "isEventCapture"),
-                                )
-                            }
-                        }
-                        "TextContainerProperty" -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val prop = value as? TextContainerProperty
-                            if (prop != null) {
-                                buildJsonObject(
-                                    "xPosition" to prop.xPosition,
-                                    "yPosition" to prop.yPosition,
-                                    "width" to prop.width,
-                                    "height" to prop.height,
-                                    "borderWidth" to prop.borderWidth,
-                                    "borderColor" to prop.borderColor,
-                                    "borderRdaius" to prop.borderRdaius,
-                                    "paddingLength" to prop.paddingLength,
-                                    "containerID" to prop.containerID,
-                                    "containerName" to prop.containerName,
-                                    "isEventCapture" to prop.isEventCapture,
-                                    "content" to prop.content,
-                                )
-                            } else {
-                                // Access via properties
-                                buildJsonObject(
-                                    "xPosition" to getIntProperty(value, "xPosition"),
-                                    "yPosition" to getIntProperty(value, "yPosition"),
-                                    "width" to getIntProperty(value, "width"),
-                                    "height" to getIntProperty(value, "height"),
-                                    "borderWidth" to getIntProperty(value, "borderWidth"),
-                                    "borderColor" to getIntProperty(value, "borderColor"),
-                                    "borderRdaius" to getIntProperty(value, "borderRdaius"),
-                                    "paddingLength" to getIntProperty(value, "paddingLength"),
-                                    "containerID" to getIntProperty(value, "containerID"),
-                                    "containerName" to getStringProperty(value, "containerName"),
-                                    "isEventCapture" to getIntProperty(value, "isEventCapture"),
-                                    "content" to getStringProperty(value, "content"),
-                                )
-                            }
-                        }
-                        "ImageContainerProperty" -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val prop = value as? ImageContainerProperty
-                            if (prop != null) {
-                                buildJsonObject(
-                                    "xPosition" to prop.xPosition,
-                                    "yPosition" to prop.yPosition,
-                                    "width" to prop.width,
-                                    "height" to prop.height,
-                                    "containerID" to prop.containerID,
-                                    "containerName" to prop.containerName,
-                                )
-                            } else {
-                                // Access via properties
-                                buildJsonObject(
-                                    "xPosition" to getIntProperty(value, "xPosition"),
-                                    "yPosition" to getIntProperty(value, "yPosition"),
-                                    "width" to getIntProperty(value, "width"),
-                                    "height" to getIntProperty(value, "height"),
-                                    "containerID" to getIntProperty(value, "containerID"),
-                                    "containerName" to getStringProperty(value, "containerName"),
-                                )
-                            }
-                        }
-                        else -> {
-                            // Try to convert to string
-                            "\"${escapeJson(value.toString())}\""
-                        }
-                    }
-                }
-            }
-            // Handle container property types (direct type check, for non-JsAny cases)
+            // Handle container property types (direct type check)
             value is ListItemContainerProperty -> buildJsonObject(
                 "itemCount" to value.itemCount,
                 "itemWidth" to value.itemWidth,
@@ -504,7 +374,22 @@ object JsInteropUtils {
                 if (arrayValue != null) {
                     buildJsonArray(arrayValue)
                 } else {
-                    "\"${escapeJson(value.toString())}\""
+                    // Try to handle as JsAny (e.g., JS array from jsGet)
+                    // Use unsafeCast instead of 'is JsAny' check which is not allowed in Wasm
+                    @Suppress("UNCHECKED_CAST")
+                    val jsValue = value as? JsAny
+                    if (jsValue != null && isArray(jsValue)) {
+                        val length = getArrayLength(jsValue)
+                        val list = mutableListOf<Any?>()
+                        for (i in 0 until length) {
+                            val element = getArrayElement(jsValue, i)
+                            @Suppress("UNCHECKED_CAST")
+                            list.add(element as? Any?)
+                        }
+                        buildJsonArray(list)
+                    } else {
+                        "\"${escapeJson(value.toString())}\""
+                    }
                 }
             }
         }

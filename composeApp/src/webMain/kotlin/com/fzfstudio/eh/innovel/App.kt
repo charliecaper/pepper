@@ -2,9 +2,8 @@
 
 package com.fzfstudio.eh.innovel
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -18,7 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.js.ExperimentalWasmJsInterop
 
-private const val WS_URL = "ws://localhost:9000"
+private const val WS_PORT = 9000
 
 @Composable
 fun App() {
@@ -28,6 +27,17 @@ fun App() {
         var bridgeReady by remember { mutableStateOf(false) }
         var showTimer by remember { mutableStateOf(true) }
         var timerSeconds by remember { mutableStateOf(0) }
+        var statusMessage by remember { mutableStateOf("Ready") }
+        var wsConnected by remember { mutableStateOf(false) }
+        val wsUrl = remember {
+            val host = JsInteropUtils.getPageHostname() ?: "localhost"
+            "ws://$host:$WS_PORT"
+        }
+        val receiver = remember { WebSocketReceiver(wsUrl) }
+
+        fun setStatus(msg: String) {
+            statusMessage = msg
+        }
 
         LaunchedEffect(showTimer) {
             if (!showTimer) return@LaunchedEffect
@@ -49,50 +59,70 @@ fun App() {
         }
 
         LaunchedEffect(Unit) {
-            // Initialize glasses display
             try {
+                setStatus("Initializing glasses...")
                 ensureEvenAppBridge()
                 createGlassesContainers(text1, text2)
                 bridgeReady = true
+                setStatus("Glasses ready")
             } catch (e: Exception) {
-                println("Failed to initialize glasses: ${e.message}")
-            }
-
-            // Connect to message source
-            val receiver: MessageReceiver = WebSocketReceiver(WS_URL)
-            receiver.connect { msg ->
-                text1 = msg.text1
-                text2 = msg.text2
-                if (bridgeReady) {
-                    val minutes = timerSeconds / 60
-                    val seconds = timerSeconds % 60
-                    updateGlassesText(msg.text1, msg.text2, "$minutes:${seconds.toString().padStart(2, '0')}")
-                }
+                setStatus("Glasses init failed: ${e.message}")
             }
         }
 
-        Box(
+        Column(
             modifier = Modifier.fillMaxSize().padding(16.dp)
         ) {
-            Text(
-                text = text1,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.align(Alignment.TopStart)
-            )
-            Text(
-                text = text2,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.align(Alignment.BottomStart)
-            )
+            // Current values
+            Text(text = text1, style = MaterialTheme.typography.titleMedium)
+            Text(text = text2, style = MaterialTheme.typography.titleMedium)
             if (showTimer) {
                 val minutes = timerSeconds / 60
                 val seconds = timerSeconds % 60
                 Text(
                     text = "$minutes:${seconds.toString().padStart(2, '0')}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    if (!wsConnected) {
+                        receiver.connect(
+                            onMessage = { msg ->
+                                text1 = msg.text1
+                                text2 = msg.text2
+                                if (bridgeReady) {
+                                    val minutes = timerSeconds / 60
+                                    val seconds = timerSeconds % 60
+                                    updateGlassesText(msg.text1, msg.text2, "$minutes:${seconds.toString().padStart(2, '0')}")
+                                }
+                            },
+                            onStatus = { msg ->
+                                setStatus(msg)
+                                wsConnected = msg.startsWith("Connected")
+                            },
+                        )
+                        wsConnected = true
+                    } else {
+                        receiver.disconnect()
+                        wsConnected = false
+                        setStatus("Disconnected")
+                    }
+                },
+            ) {
+                Text(if (wsConnected) "Disconnect" else "Connect WS")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Status log area
+            Text(
+                text = statusMessage,
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }

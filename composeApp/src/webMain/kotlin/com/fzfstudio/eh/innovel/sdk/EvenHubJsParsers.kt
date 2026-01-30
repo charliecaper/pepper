@@ -220,6 +220,14 @@ internal fun ImageRawDataUpdate.toJsonString(): String {
     )
 }
 
+// ==================== Top-level JS interop helpers for normalizeImageData ====================
+
+private val jsIsArray: JsAny = js("(function(obj) { return Array.isArray(obj); })")
+private val jsGetLength: JsAny = js("(function(obj) { return obj != null && typeof obj.length === 'number' ? obj.length : null; })")
+private val jsGetByteLength: JsAny = js("(function(obj) { return obj != null && typeof obj.byteLength === 'number' ? obj.byteLength : null; })")
+private val jsGetArrayElement: JsAny = js("(function(arr, index) { return arr != null ? arr[index] : null; })")
+private val jsCreateUint8ArrayFromBuffer: JsAny = js("(function(buffer) { return new Uint8Array(buffer); })")
+
 /**
  * Normalize image data: convert Uint8Array/ArrayBuffer to number[].
  * Corresponds to TypeScript's `ImageRawDataUpdate.normalizeImageData`
@@ -227,19 +235,19 @@ internal fun ImageRawDataUpdate.toJsonString(): String {
 private fun normalizeImageData(raw: Any?): Any? {
     if (raw == null) return null
     if (raw is String) return raw
-    
-    // Use js() to create wrappers for accessing properties
+
+    // Use top-level js() interop functions
     @Suppress("UNCHECKED_CAST")
-    val isArray = js("(function(obj) { return Array.isArray(obj); })") as (Any?) -> Boolean
+    val isArray = jsIsArray as (Any?) -> Boolean
     @Suppress("UNCHECKED_CAST")
-    val getLength = js("(function(obj) { return obj != null && typeof obj.length === 'number' ? obj.length : null; })") as (Any?) -> Int?
+    val getLength = jsGetLength as (Any?) -> Int?
     @Suppress("UNCHECKED_CAST")
-    val getByteLength = js("(function(obj) { return obj != null && typeof obj.byteLength === 'number' ? obj.byteLength : null; })") as (Any?) -> Int?
+    val getByteLength = jsGetByteLength as (Any?) -> Int?
     @Suppress("UNCHECKED_CAST")
-    val getArrayElement = js("(function(arr, index) { return arr != null ? arr[index] : null; })") as (Any?, Int) -> Any?
+    val getArrayElement = jsGetArrayElement as (Any?, Int) -> Any?
     @Suppress("UNCHECKED_CAST")
-    val createUint8ArrayFromBuffer = js("(function(buffer) { return new Uint8Array(buffer); })") as (Any?) -> Any?
-    
+    val createUint8ArrayFromBuffer = jsCreateUint8ArrayFromBuffer as (Any?) -> Any?
+
     // Check if it's a JavaScript array (avoid Array<*> type check to prevent Cloneable error)
     if (isArray(raw)) {
         val length = getLength(raw) ?: return raw
@@ -248,7 +256,7 @@ private fun normalizeImageData(raw: Any?): Any? {
             value?.toInt()?.and(0xff) ?: 0
         }
     }
-    
+
     // Check if it's a Uint8Array (by checking for length property)
     try {
         val length = getLength(raw)
@@ -262,7 +270,7 @@ private fun normalizeImageData(raw: Any?): Any? {
     } catch (e: Exception) {
         // Ignore error, continue checking for ArrayBuffer
     }
-    
+
     // Check if it's an ArrayBuffer (by checking byteLength property)
     try {
         val byteLength = getByteLength(raw)
@@ -278,7 +286,7 @@ private fun normalizeImageData(raw: Any?): Any? {
     } catch (e: Exception) {
         // Ignore error
     }
-    
+
     return raw
 }
 

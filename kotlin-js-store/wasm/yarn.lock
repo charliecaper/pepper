@@ -2,10 +2,12 @@
 # yarn lockfile v1
 
 
+"@evenrealities/even_hub_sdk@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@evenrealities/even_hub_sdk/-/even_hub_sdk-0.0.6.tgz#7fbd71864a1c714af019d8e2f0d7266b990000b2"
+  integrity sha512-rPwoSef8d3Eld3OyEyzXd536ol42DOjrYkxJUWc0C0htJ3GD1GEhqdSVQtPg46tzU4My3F7zwSzUcvsD/5r0Cw==
+
 "@js-joda/core@3.2.0":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@js-joda/core/-/core-3.2.0.tgz#3e61e21b7b2b8a6be746df1335cf91d70db2a273"
   integrity sha512-PMqgJ0sw5B7FKb2d5bWYIoxjri+QlW/Pys7+Rw82jSH0QN3rB05jZ/VrrsUdh1w4+i2kw9JOejXGq/KhDOX7Kg==
-
-"even_hub_sdk@file:../../composeApp/even_hub_sdk":
-  version "0.0.0-local"
