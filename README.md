@@ -1,139 +1,116 @@
-# Pepper — Even Hub Web Demo
+# Pepper
 
-A **Kotlin Multiplatform** Even Hub Web demo using **Compose Multiplatform** for the UI, targeting **Kotlin/JS** and **Kotlin/Wasm**. It is a **simple novel reader**: bookshelf, chapter list, and reading view, plus Even Hub integration for device and page containers.
+A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
-## Features
+## How it works
 
-- **User & device**: User info, device status (glasses, ring, etc.)
-- **Bookshelf & reading**: Book list, chapter selection, reading dialog
-- **Image test**: Custom-size canvas, 3D preview, screenshot upload to Even Hub container
-- **Even Hub**: Create/rebuild page containers, update image raw data, text container upgrade, shut down page container
+```
+QLab / TouchDesigner / Script
+        |
+        | WebSocket JSON
+        v
+  ws-relay.js (Node.js, port 9000)
+        |
+        | relay
+        v
+  Pepper app (in Even App WebView on iPhone)
+        |
+        | BLE
+        v
+  Even G2 glasses display
+```
 
-## SDK
+The app shows two text lines and a timer on the glasses. External tools send `{"text1": "...", "text2": "..."}` over WebSocket to update them in real time.
 
-- **Even Hub SDK**: npm package [`@evenrealities/even_hub_sdk`](https://www.npmjs.com/package/@evenrealities/even_hub_sdk) (version `^0.0.6`)
-- Kotlin/JS and Kotlin/Wasm expect/actual bridge; shared `webMain` logic
+## Quick start
 
-Bridge and helpers:
+### 1. Install dependencies
 
-| Description      | Path |
-|------------------|------|
-| Bridge API       | `composeApp/src/webMain/kotlin/.../sdk/EvenHubBridge.kt` |
-| JS/Wasm impl     | `composeApp/src/jsMain/.../sdk/EvenHubBridge.js.kt`, `.../wasmJsMain/.../EvenHubBridge.wasmJs.kt` |
-| Types & parsing  | `EvenHubTypes.kt`, `EvenHubJsParsers.kt` |
-| JS interop       | `EvenHubJsInterop.kt`, `JsInteropUtils.kt` |
+```bash
+npm install
+```
 
-**Usage**: Call `ensureEvenAppBridge()` first; then use **Basic API** for user/device, and **Even Hub API** for page containers and events.
+### 2. Start the WebSocket relay server
 
----
+```bash
+node tools/ws-relay.js
+```
 
-## Basic API
+This starts a WebSocket server on port 9000 that relays messages between your control tool and the app.
 
-Bridge setup and user/device access (in `EvenHubBridge.kt`). Call these before or alongside Even Hub features.
+### 3. Start the dev server
 
-| API | Description |
-|-----|-------------|
-| `ensureEvenAppBridge()` | Initialize and wait for Even App bridge. **Must be called once before any other SDK usage.** |
-| `getUserInfo(): UserInfo?` | Get current user info |
-| `getDeviceInfo(): DeviceInfo?` | Get device info (glasses, ring, etc.) |
-| `observeDeviceStatus(onChange): () -> Unit` | Subscribe to device status; returns unsubscribe |
+```bash
+./gradlew :composeApp:jsBrowserDevelopmentRun
+```
 
----
+The app serves on `http://<your-ip>:2000`.
 
-## Even Hub API
+### 4. Load in the Even App
 
-Page containers and event subscription (aligned with host BleG2CmdProtoEvenHubExt). **Use these for Even Hub–specific features; do not call low-level generic methods.**
+Scan a QR code pointing to `http://<your-ip>:2000` from the Even App. The app will appear on the phone and glasses.
 
-### Event
+Tap **Connect WS** on the phone screen to connect to the relay server.
 
-| API | Description |
-|-----|-------------|
-| `observeEvenHubEvent(onChange): () -> Unit` | Subscribe to EvenHub events (list/text/system); returns unsubscribe |
+### 5. Send messages
 
-### Page containers (PB)
+**From TouchDesigner** (WebSocket DAT connected to `localhost:9000`):
 
-| API | Description |
-|-----|-------------|
-| `createStartUpPageContainer(container): Int?` | Create startup page container (text/list/image); returns container ID |
-| `rebuildPageContainer(container): Boolean` | Rebuild page container |
-| `updateImageRawData(data): Boolean` | Update image raw data (e.g. `imageData` as number[]) |
-| `textContainerUpgrade(container): Boolean` | Upgrade text container content |
-| `shutDownPageContainer(container): Boolean` | Shut down page container (exit Even Hub page) |
+```python
+op('websocket1').sendText('{"text1":"Line one","text2":"Line two"}')
+```
 
-### Data types (EvenHubTypes.kt)
+**From QLab**: QLab speaks OSC over UDP, not WebSocket. You need a small bridge that receives OSC and forwards as WebSocket JSON. (Not yet included — contributions welcome.)
 
-- **CreateStartUpPageContainer**: `containerTotalNum`, `listObject`, `textObject`, `imageObject`
-- **RebuildPageContainer**: same fields, for rebuild
-- **ImageRawDataUpdate**: `containerID`, `containerName`, `imageData` (prefer number[])
-- **TextContainerUpgrade**: `containerID`, `containerName`, `content`, etc.
-- **ShutDownContainer**: `exitMode` (e.g. 0)
+**From Python**:
 
-Construct these data classes and pass them to the **Even Hub API**; serialization is in `EvenHubJsParsers.kt`.
+```python
+import asyncio, websockets, json
+
+async def send():
+    async with websockets.connect("ws://localhost:9000") as ws:
+        await ws.send(json.dumps({"text1": "Hello", "text2": "World"}))
+
+asyncio.run(send())
+```
+
+**From Node.js**:
+
+```javascript
+const WebSocket = require("ws");
+const ws = new WebSocket("ws://localhost:9000");
+ws.on("open", () => {
+    ws.send(JSON.stringify({ text1: "Hello", text2: "World" }));
+});
+```
+
+## Message format
+
+```json
+{"text1": "First line text", "text2": "Second line text"}
+```
+
+Both fields are required. Max 1000 characters per field at initial display, 2000 on update.
 
 ## Requirements
 
-- **JDK**: 24 (see `jvmToolchain(24)` in `composeApp/build.gradle.kts`)
-- **Node.js**: for Webpack and npm (Gradle uses it automatically)
-
-## Install & run
-
-### 1. Clone and enter project
-
-```bash
-git clone <repository-url>
-cd Pepper
-```
-
-### 2. Run dev server
-
-Default port: **2000**.
-
-**Wasm** (recommended, modern browsers):
-
-- macOS / Linux:
-  ```bash
-  ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-  ```
-- Windows:
-  ```bash
-  .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-  ```
-
-**JS** (older browsers):
-
-- macOS / Linux:
-  ```bash
-  ./gradlew :composeApp:jsBrowserDevelopmentRun
-  ```
-- Windows:
-  ```bash
-  .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
-  ```
-
-### 3. Open in browser
-
-- **http://localhost:2000**
-
-(Change `devServer.port` in `composeApp/build.gradle.kts` if the port is in use.)
-
-### 4. Build only (no server)
-
-- Wasm: `./gradlew :composeApp:wasmJsBrowserDevelopmentWebpack`
-- JS: `./gradlew :composeApp:jsBrowserDevelopmentWebpack`
+- **JDK 24**
+- **Node.js >= 20**
+- Even G2 glasses + Even App on iPhone
 
 ## Project layout
 
-- **`composeApp/src/commonMain`**: Shared Compose theme, etc.
-- **`composeApp/src/webMain`**: Web shared logic and UI (bookshelf, reading, image test, SDK bridge and types)
-- **`composeApp/src/jsMain`**: Kotlin/JS platform impl (Bridge, Interop)
-- **`composeApp/src/wasmJsMain`**: Kotlin/Wasm platform impl (Bridge, Interop)
+```
+composeApp/src/
+  commonMain/    Shared theme
+  webMain/       App logic, SDK bridge, WebSocket receiver
+  jsMain/        Kotlin/JS platform bindings
+  wasmJsMain/    Kotlin/Wasm platform bindings
+tools/
+  ws-relay.js    WebSocket relay server
+```
 
-## Links
+## Built with
 
-- [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
-- [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform)
-- [Kotlin/Wasm](https://kotl.in/wasm/)
-
-Feedback: [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web). Issues: [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
-
-**[中文文档](README.zh-CN.md)**
+- [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) + [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform)
+- [Even Hub SDK](https://www.npmjs.com/package/@evenrealities/even_hub_sdk) (`@evenrealities/even_hub_sdk`)
