@@ -1,4 +1,4 @@
-# InNovel — Even Hub Web 演示
+# Pepper — Even Hub Web 演示
 
 基于 **Kotlin Multiplatform** 的 Even Hub Web 演示应用，使用 **Compose Multiplatform** 构建界面，支持 **Kotlin/JS** 与 **Kotlin/Wasm** 两种 Web 目标。本应用是一个**简易小说阅读器**：调用Even Hub API在眼镜绘制容器展示选中书本基础信息，章节列表和全屏阅读。
 
@@ -81,7 +81,7 @@
 
 ```bash
 git clone <repository-url>
-cd InNovel
+cd Pepper
 ```
 
 ### 2. 运行开发服务器

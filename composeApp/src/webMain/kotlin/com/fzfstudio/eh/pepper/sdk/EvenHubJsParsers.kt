@@ -1,7 +1,7 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
 @file:Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
 
-package com.fzfstudio.eh.innovel.sdk
+package com.fzfstudio.eh.pepper.sdk
 
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny

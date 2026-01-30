@@ -1,9 +1,9 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
 @file:Suppress("UNCHECKED_CAST")
 
-package com.fzfstudio.eh.innovel
+package com.fzfstudio.eh.pepper
 
-import com.fzfstudio.eh.innovel.sdk.JsInteropUtils
+import com.fzfstudio.eh.pepper.sdk.JsInteropUtils
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.js

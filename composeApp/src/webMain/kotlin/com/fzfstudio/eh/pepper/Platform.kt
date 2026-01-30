@@ -1,4 +1,4 @@
-package com.fzfstudio.eh.innovel
+package com.fzfstudio.eh.pepper
 
 interface Platform {
     val name: String

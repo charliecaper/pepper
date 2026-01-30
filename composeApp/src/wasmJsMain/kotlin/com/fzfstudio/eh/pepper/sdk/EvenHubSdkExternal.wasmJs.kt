@@ -1,8 +1,7 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
 @file:JsModule("@evenrealities/even_hub_sdk")
-@file:JsNonModule
 
-package com.fzfstudio.eh.innovel.sdk
+package com.fzfstudio.eh.pepper.sdk
 
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
@@ -10,13 +9,13 @@ import kotlin.js.Promise
 import kotlin.js.definedExternally
 
 /**
- * Kotlin/JS externals for @evenrealities/even_hub_sdk (declarations only, no implementation logic).
+ * Kotlin/WasmJs externals for @evenrealities/even_hub_sdk.
  *
- * Step 1: Keep this file as `external` declarations only (because `@JsModule` is used).
- * Step 2: For actual business calls, use the `actual` wrapper methods in `EvenHubBridge.js.kt`.
- * Step 3: SDK method signatures follow the TypeScript SDK (npm package `@evenrealities/even_hub_sdk`).
+ * Step 1: This file only contains `external` declarations, mapping exports from npm package `@evenrealities/even_hub_sdk`.
+ * Step 2: Wasm JS interop types are stricter; parameters/return values use `JsAny?`.
+ * Step 3: Business calls go through `EvenHubBridge.wasmJs.kt`'s `actual` wrappers to avoid handling Promises everywhere.
  */
-external class EvenAppBridge {
+external class EvenAppBridge : JsAny {
     val ready: Boolean
     // Generic bridge entry: method name + optional params.
     fun callEvenApp(method: String, params: JsAny? = definedExternally): Promise<JsAny?>

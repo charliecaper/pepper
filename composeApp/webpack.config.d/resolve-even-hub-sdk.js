@@ -4,7 +4,7 @@
  * Background: even_hub_sdk now uses the npm package @evenrealities/even_hub_sdk.
  * Webpack needs to be configured to correctly resolve the scoped package.
  *
- * Note: __dirname at build time points to build/js/packages/InNovel-composeApp/webpack.config.js
+ * Note: __dirname at build time points to build/js/packages/Pepper-composeApp/webpack.config.js
  * and we need to traverse up multiple levels to reach the project root.
  */
 
@@ -31,8 +31,8 @@ function findProjectRoot(startPath) {
     }
     
     // If not found, try common fallback locations
-    // build/js/packages/InNovel-composeApp -> project root (7 levels up)
-    // build/wasm/packages/InNovel-composeApp -> project root (7 levels up)
+    // build/js/packages/Pepper-composeApp -> project root (7 levels up)
+    // build/wasm/packages/Pepper-composeApp -> project root (7 levels up)
     const fallbackRoot = path.resolve(__dirname, "../../../../../../..");
     if (fs.existsSync(path.join(fallbackRoot, "node_modules"))) {
         return fallbackRoot;

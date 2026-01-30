@@ -1,4 +1,4 @@
-package com.fzfstudio.eh.innovel.sdk
+package com.fzfstudio.eh.pepper.sdk
 
 /**
  * Kotlin models parsed from JS SDK return values.

@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
 
-package com.fzfstudio.eh.innovel
+package com.fzfstudio.eh.pepper
 
 import kotlin.js.ExperimentalWasmJsInterop
 

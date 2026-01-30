@@ -1,4 +1,4 @@
-# InNovel — Even Hub Web Demo
+# Pepper — Even Hub Web Demo
 
 A **Kotlin Multiplatform** Even Hub Web demo using **Compose Multiplatform** for the UI, targeting **Kotlin/JS** and **Kotlin/Wasm**. It is a **simple novel reader**: bookshelf, chapter list, and reading view, plus Even Hub integration for device and page containers.
 
@@ -81,7 +81,7 @@ Construct these data classes and pass them to the **Even Hub API**; serializatio
 
 ```bash
 git clone <repository-url>
-cd InNovel
+cd Pepper
 ```
 
 ### 2. Run dev server

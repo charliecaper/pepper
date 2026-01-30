@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
 
-package com.fzfstudio.eh.innovel
+package com.fzfstudio.eh.pepper
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -10,8 +10,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.fzfstudio.eh.innovel.sdk.*
-import com.fzfstudio.eh.innovel.theme.InNovelTheme
+import com.fzfstudio.eh.pepper.sdk.*
+import com.fzfstudio.eh.pepper.theme.PepperTheme
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -21,7 +21,7 @@ private const val WS_PORT = 9000
 
 @Composable
 fun App() {
-    InNovelTheme {
+    PepperTheme {
         var text1 by remember { mutableStateOf("Hello Charlie2") }
         var text2 by remember { mutableStateOf("Hello World") }
         var bridgeReady by remember { mutableStateOf(false) }

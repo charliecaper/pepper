@@ -1,4 +1,4 @@
-package com.fzfstudio.eh.innovel
+package com.fzfstudio.eh.pepper
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport

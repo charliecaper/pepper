@@ -1,20 +1,20 @@
-package com.fzfstudio.eh.innovel.theme
+package com.fzfstudio.eh.pepper.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import innovel.composeapp.generated.resources.Res
-import innovel.composeapp.generated.resources.misans_bold
-import innovel.composeapp.generated.resources.misans_light
-import innovel.composeapp.generated.resources.misans_regular
+import pepper.composeapp.generated.resources.Res
+import pepper.composeapp.generated.resources.misans_bold
+import pepper.composeapp.generated.resources.misans_light
+import pepper.composeapp.generated.resources.misans_regular
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.Font
 
 @Composable
 @OptIn(ExperimentalResourceApi::class)
-fun InNovelTheme(content: @Composable () -> Unit) {
+fun PepperTheme(content: @Composable () -> Unit) {
     val miSansFamily = FontFamily(
         Font(Res.font.misans_light, weight = FontWeight.Light),
         Font(Res.font.misans_regular, weight = FontWeight.Normal),
