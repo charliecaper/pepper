@@ -100,6 +100,15 @@ fun App() {
                                     updateGlassesText(msg.text1, msg.text2, "$minutes:${seconds.toString().padStart(2, '0')}")
                                 }
                             },
+                            onCommand = { cmd ->
+                                when (cmd.command) {
+                                    "resetTimer" -> {
+                                        timerSeconds = 0
+                                        setStatus("Timer reset")
+                                    }
+                                    else -> setStatus("Unknown command: ${cmd.command}")
+                                }
+                            },
                             onStatus = { msg ->
                                 setStatus(msg)
                                 wsConnected = msg.startsWith("Connected")

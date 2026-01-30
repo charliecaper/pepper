@@ -33,11 +33,22 @@ data class NotifyMessage(
 )
 
 /**
+ * Command message (e.g. {"command": "resetTimer"}).
+ */
+data class CommandMessage(
+    val command: String,
+)
+
+/**
  * Protocol-agnostic interface for receiving messages.
  * Swap implementations to change transport (WebSocket, OSC bridge, etc.).
  */
 interface MessageReceiver {
-    fun connect(onMessage: (NotifyMessage) -> Unit, onStatus: (String) -> Unit = {})
+    fun connect(
+        onMessage: (NotifyMessage) -> Unit,
+        onCommand: (CommandMessage) -> Unit = {},
+        onStatus: (String) -> Unit = {},
+    )
     fun disconnect()
 }
 
@@ -56,8 +67,15 @@ class WebSocketReceiver(private val url: String) : MessageReceiver {
     private var shouldReconnect = true
     private var statusCallback: (String) -> Unit = {}
 
-    override fun connect(onMessage: (NotifyMessage) -> Unit, onStatus: (String) -> Unit) {
+    private var commandCallback: (CommandMessage) -> Unit = {}
+
+    override fun connect(
+        onMessage: (NotifyMessage) -> Unit,
+        onCommand: (CommandMessage) -> Unit,
+        onStatus: (String) -> Unit,
+    ) {
         statusCallback = onStatus
+        commandCallback = onCommand
         shouldReconnect = true
         onStatus("Connecting to $url...")
         openConnection(onMessage)
@@ -98,9 +116,14 @@ class WebSocketReceiver(private val url: String) : MessageReceiver {
 
             setOnMessage(socket) { data ->
                 val text = JsInteropUtils.toStringOrNull(data) ?: return@setOnMessage
-                val msg = parseMessage(text) ?: return@setOnMessage
                 statusCallback("Received: ${text.take(80)}")
-                onMessage(msg)
+                val cmd = parseCommand(text)
+                if (cmd != null) {
+                    commandCallback(cmd)
+                } else {
+                    val msg = parseMessage(text) ?: return@setOnMessage
+                    onMessage(msg)
+                }
             }
 
             setOnClose(socket) {
@@ -128,6 +151,14 @@ class WebSocketReceiver(private val url: String) : MessageReceiver {
                 openConnection(onMessage)
             }
         }, 3000)
+    }
+
+    private fun parseCommand(raw: String): CommandMessage? {
+        return try {
+            val obj = JsInteropUtils.parseJson(raw)
+            val command = JsInteropUtils.getStringProperty(obj, "command")
+            if (command != null) CommandMessage(command) else null
+        } catch (_: Exception) { null }
     }
 
     private fun parseMessage(raw: String): NotifyMessage? {
