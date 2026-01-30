@@ -7,15 +7,15 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 
 /**
- * even_hub_sdk 的 Kotlin/JS 实现（actual）。
+ * Kotlin/JS implementation (actual) of even_hub_sdk.
  *
- * 步骤1：通过 `waitForEvenAppBridge().await()` 等待 JS 侧 bridge ready。
- * 步骤2：调用方法：`callEvenApp("getUserInfo")` 或 `callEvenApp("method", params)`。
- * 步骤3：带参调用：先把参数组织成 JS 对象（或使用 `callEvenAppJson` 传 JSON 字符串）。
- * 步骤4：监听设备状态变化：`observeDeviceStatus { ... }`。
+ * Step 1: Wait for the JS-side bridge to be ready via `waitForEvenAppBridge().await()`.
+ * Step 2: Call methods: `callEvenApp("getUserInfo")` or `callEvenApp("method", params)`.
+ * Step 3: Call with parameters: organize params as a JS object (or use `callEvenAppJson` with a JSON string).
+ * Step 4: Listen for device status changes: `observeDeviceStatus { ... }`.
  *
- * 注意：callEvenApp 数据结构中，params 会直接作为消息的 data 字段传递。
- * JS SDK 内部构建的消息结构：{ type: "call_even_app_method", method: method, data: params }
+ * Note: In the callEvenApp message structure, params are passed directly as the data field.
+ * JS SDK internal message structure: { type: "call_even_app_method", method: method, data: params }
  */
 actual suspend fun ensureEvenAppBridge() {
     waitForEvenAppBridge().await()

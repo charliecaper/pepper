@@ -5,7 +5,7 @@ import androidx.compose.ui.window.ComposeViewport
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    //  初始化主页
+    // Initialize the main page
     ComposeViewport {
         App()
     }

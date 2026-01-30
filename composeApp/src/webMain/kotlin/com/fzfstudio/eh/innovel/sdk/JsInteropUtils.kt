@@ -9,91 +9,91 @@ import kotlin.js.Promise
 import kotlin.js.js
 import kotlinx.coroutines.await
 
-// ==================== Fetch API 外部声明（必须在顶层）====================
+// ==================== Fetch API external declarations (must be at top level) ====================
 
 /**
- * JavaScript fetch 函数
+ * JavaScript fetch function.
  */
 external fun fetch(url: String): Promise<JsAny>
 
 /**
- * JavaScript 互操作工具类
- * 
- * 封装了所有与 JavaScript 交互的常用功能，包括：
- * - 类型转换（JsAny 到 Kotlin 类型）
- * - Promise 处理
- * - JSON 序列化/反序列化
- * - 数组和对象访问
- * - Fetch API 封装
+ * JavaScript interop utility class.
+ *
+ * Encapsulates common JavaScript interaction functionality, including:
+ * - Type conversion (JsAny to Kotlin types)
+ * - Promise handling
+ * - JSON serialization/deserialization
+ * - Array and object access
+ * - Fetch API wrappers
  */
 object JsInteropUtils {
     
-    // ==================== 类型转换 ====================
-    
+    // ==================== Type Conversion ====================
+
     /**
-     * 将 JsAny 转换为 String，如果为 null 或 undefined 则返回 null
+     * Convert JsAny to String, returns null if null or undefined.
      */
     fun toStringOrNull(value: JsAny?): String? = jsToStringOrNull(value)
     
     /**
-     * 将 JsAny 转换为 String，如果为 null 或 undefined 则返回空字符串
+     * Convert JsAny to String, returns empty string if null or undefined.
      */
     fun toString(value: JsAny?): String = toStringOrNull(value) ?: ""
     
     /**
-     * 将 JsAny 转换为 Int，如果为 null 或 undefined 则返回 null
+     * Convert JsAny to Int, returns null if null or undefined.
      */
     fun toIntOrNull(value: JsAny?): Int? = jsToDoubleOrNull(value)?.toInt()
     
     /**
-     * 将 JsAny 转换为 Int，如果为 null 或 undefined 则返回 0
+     * Convert JsAny to Int, returns 0 if null or undefined.
      */
     fun toInt(value: JsAny?): Int = toIntOrNull(value) ?: 0
     
     /**
-     * 将 JsAny 转换为 Double，如果为 null 或 undefined 则返回 null
+     * Convert JsAny to Double, returns null if null or undefined.
      */
     fun toDoubleOrNull(value: JsAny?): Double? = jsToDoubleOrNull(value)
     
     /**
-     * 将 JsAny 转换为 Boolean，如果为 null 或 undefined 则返回 null
+     * Convert JsAny to Boolean, returns null if null or undefined.
      */
     fun toBooleanOrNull(value: JsAny?): Boolean? = jsToBoolOrNull(value)
     
-    // ==================== 对象属性访问 ====================
-    
+    // ==================== Object Property Access ====================
+
     /**
-     * 安全地获取 JavaScript 对象的属性值
-     * @param obj JavaScript 对象
-     * @param key 属性名
-     * @return 属性值，如果不存在则返回 null
+     * Safely get a JavaScript object's property value.
+     * @param obj JavaScript object
+     * @param key Property name
+     * @return Property value, or null if it doesn't exist
      */
     fun getProperty(obj: JsAny?, key: String): JsAny? = jsGet(obj, key)
     
     /**
-     * 获取对象的字符串属性
+     * Get a string property from an object.
      */
     fun getStringProperty(obj: JsAny?, key: String): String? = 
         toStringOrNull(getProperty(obj, key))
     
     /**
-     * 获取对象的整数属性
+     * Get an integer property from an object.
      */
     fun getIntProperty(obj: JsAny?, key: String): Int? = 
         toIntOrNull(getProperty(obj, key))
     
     /**
-     * 获取对象的布尔属性
+     * Get a boolean property from an object.
      */
     fun getBooleanProperty(obj: JsAny?, key: String): Boolean? = 
         toBooleanOrNull(getProperty(obj, key))
     
-    // ==================== 类型检查 ====================
-    
+    // ==================== Type Checking ====================
+
     /**
-     * 获取 JavaScript 值的类型字符串
-     * @param value JavaScript 值
-     * @return 类型字符串（'number', "string", "boolean", "object", "null", "undefined"）
+     * Get the type string of a JavaScript value.
+     * @param value JavaScript value
+     * @return Type string ('number', "string", "boolean", "object", "null", "undefined")
      */
     fun getType(value: JsAny?): String {
         if (value == null) return "null"
@@ -102,10 +102,10 @@ object JsInteropUtils {
             is Boolean -> "boolean"
             is String -> "string"
             else -> {
-                // 对于对象，检查是否有 length 属性来判断是否是数组
+                // For objects, check for length property to determine if it's an array
                 val length = getProperty(value, "length")
                 if (length != null && length is Number) {
-                    "object" // 可能是数组
+                    "object" // Possibly an array
                 } else {
                     "object"
                 }
@@ -114,9 +114,9 @@ object JsInteropUtils {
     }
     
     /**
-     * 检查值是否是 JavaScript 数组
-     * @param value JavaScript 值
-     * @return 如果是数组则返回 true
+     * Check if a value is a JavaScript array.
+     * @param value JavaScript value
+     * @return true if it's an array
      */
     fun isArray(value: JsAny?): Boolean {
         if (value == null) return false
@@ -125,9 +125,9 @@ object JsInteropUtils {
     }
     
     /**
-     * 获取数组长度
-     * @param array JavaScript 数组
-     * @return 数组长度，如果不是数组则返回 0
+     * Get array length.
+     * @param array JavaScript array
+     * @return Array length, or 0 if not an array
      */
     fun getArrayLength(array: JsAny?): Int {
         if (!isArray(array)) return 0
@@ -135,49 +135,49 @@ object JsInteropUtils {
     }
     
     /**
-     * 获取数组元素
-     * @param array JavaScript 数组
-     * @param index 索引
-     * @return 数组元素，如果不存在则返回 null
+     * Get an array element.
+     * @param array JavaScript array
+     * @param index Index
+     * @return Array element, or null if it doesn't exist
      */
     fun getArrayElement(array: JsAny?, index: Int): JsAny? {
         if (!isArray(array)) return null
         return getProperty(array, index.toString())
     }
     
-    // ==================== JSON 处理 ====================
-    
+    // ==================== JSON Processing ====================
+
     /**
-     * 将 JavaScript 对象序列化为 JSON 字符串
-     * @param obj JavaScript 对象
-     * @return JSON 字符串
+     * Serialize a JavaScript object to a JSON string.
+     * @param obj JavaScript object
+     * @return JSON string
      */
     fun stringify(obj: JsAny?): String = jsStringify(obj)
     
     /**
-     * 将 JSON 字符串解析为 JavaScript 对象
-     * @param text JSON 字符串
-     * @return JavaScript 对象
+     * Parse a JSON string into a JavaScript object.
+     * @param text JSON string
+     * @return JavaScript object
      */
     fun parseJson(text: String): JsAny = jsParseJson(text)
     
-    // ==================== Promise 处理 ====================
-    
-    // 注意：使用 kotlinx.coroutines.await 扩展函数，而不是自定义实现
-    // 这样可以避免在 WebView 环境中的链接错误
+    // ==================== Promise Handling ====================
+
+    // Note: Uses kotlinx.coroutines.await extension function instead of custom implementation
+    // to avoid linker errors in WebView environments
     
     // ==================== Fetch API ====================
     
     /**
-     * 使用 Fetch API 获取文本内容
-     * @param url 资源 URL
-     * @return 文本内容
+     * Fetch text content using the Fetch API.
+     * @param url Resource URL
+     * @return Text content
      */
     suspend fun fetchText(url: String): String {
         val response = fetch(url).await()
-        // 使用 js() 函数调用 response.text()
-        // 注意：js() 函数需要一个字符串表达式，不能直接使用变量
-        // 所以我们使用一个包装函数
+        // Use js() to call response.text()
+        // Note: js() requires a string expression and can't use variables directly,
+        // so we use a wrapper function
         @Suppress("UNCHECKED_CAST")
         val callText = js("(function(r) { return r.text(); })") as (JsAny) -> Promise<JsAny>
         val textPromise = callText(response)
@@ -186,9 +186,9 @@ object JsInteropUtils {
     }
     
     /**
-     * 使用 Fetch API 获取 JSON 内容
-     * @param url 资源 URL
-     * @return 解析后的 JavaScript 对象
+     * Fetch JSON content using the Fetch API.
+     * @param url Resource URL
+     * @return Parsed JavaScript object
      */
     suspend fun fetchJson(url: String): JsAny? {
         val text = fetchText(url)
@@ -203,33 +203,33 @@ object JsInteropUtils {
         }
     }
     
-    // ==================== JSON 构建工具 ====================
-    
+    // ==================== JSON Building Utilities ====================
+
     /**
-     * 构建 JSON 对象字符串
-     * @param fields 字段列表（key-value 对）
-     * @return JSON 对象字符串
+     * Build a JSON object string.
+     * @param fields Field list (key-value pairs)
+     * @return JSON object string
      */
     @Suppress("UNCHECKED_CAST")
     fun buildJsonObject(vararg fields: Pair<String, Any?>): String {
-        // 在 Kotlin/JS 中，vararg 会被转换为 Array
-        // 为了避免 Cloneable 错误，我们使用 jsGet 来访问数组
+        // In Kotlin/JS, vararg is converted to Array
+        // To avoid Cloneable errors, we use jsGet to access the array
         @Suppress("UNCHECKED_CAST")
         val fieldsJs = fields as? JsAny ?: return "{}"
         
-        // 使用 jsGet 获取数组长度
+        // Use jsGet to get array length
         val length = toIntOrNull(getProperty(fieldsJs, "length")) ?: 0
         val fieldsList = mutableListOf<Pair<String, Any?>>()
         
-        // 使用 jsGet 访问数组元素和 Pair 属性
-        // 在 Kotlin/JS 中，尝试多种方式访问 Pair 的属性
+        // Use jsGet to access array elements and Pair properties
+        // In Kotlin/JS, try multiple ways to access Pair properties
         for (i in 0 until length) {
             val fieldJs = getProperty(fieldsJs, i.toString())
             if (fieldJs != null) {
                 var key: String? = null
                 var value: Any? = null
                 
-                // 方法1: 尝试直接类型转换为 Pair
+                // Method 1: Try direct type cast to Pair
                 try {
                     @Suppress("UNCHECKED_CAST")
                     val pair = fieldJs as? Pair<*, *>
@@ -238,18 +238,18 @@ object JsInteropUtils {
                         value = pair.second
                     }
                 } catch (e: Exception) {
-                    // 继续尝试其他方法
+                    // Continue trying other methods
                 }
                 
-                // 方法2: 如果方法1失败，尝试使用 getProperty 访问 "first" 和 "second"
+                // Method 2: If method 1 failed, try using getProperty to access "first" and "second"
                 if (key == null) {
                     key = toStringOrNull(getProperty(fieldJs, "first"))
                     value = getProperty(fieldJs, "second") as? Any?
                 }
                 
-                // 方法3: 如果还是失败，尝试使用 bracket notation (通过 jsGet 访问)
+                // Method 3: If still failed, try bracket notation (via jsGet)
                 if (key == null) {
-                    // 尝试访问可能的其他属性名
+                    // Try accessing other possible property names
                     key = toStringOrNull(getProperty(fieldJs, "component1"))
                     if (key == null) {
                         value = getProperty(fieldJs, "component2") as? Any?
@@ -266,7 +266,7 @@ object JsInteropUtils {
     }
     
     /**
-     * 内部实现：使用 List 构建 JSON 对象
+     * Internal implementation: Build JSON object using List.
      */
     private fun buildJsonObjectInternal(fields: List<Pair<String, Any?>>): String {
         val parts = mutableListOf<String>()
@@ -283,16 +283,16 @@ object JsInteropUtils {
     }
     
     /**
-     * 构建 JSON 数组字符串
-     * @param values 值列表
-     * @return JSON 数组字符串
+     * Build a JSON array string.
+     * @param values Value list
+     * @return JSON array string
      */
     fun buildJsonArray(values: List<*>): String {
         return values.joinToString(prefix = "[", postfix = "]") { jsonValue(it) }
     }
     
     /**
-     * 将值转换为 JSON 字符串表示
+     * Convert a value to its JSON string representation.
      */
     @Suppress("UNCHECKED_CAST")
     private fun jsonValue(value: Any?): String {
@@ -309,16 +309,16 @@ object JsInteropUtils {
             }
             value is Boolean -> value.toString()
             value is String -> "\"${escapeJson(value)}\""
-            // 先检查是否是 List（在 Kotlin/JS 中，List 在运行时是数组）
-            // 注意：这个检查需要在 JsAny 检查之前，因为 List 可能不是 JsAny
+            // Check for List first (in Kotlin/JS, List is an array at runtime)
+            // Note: This check must come before JsAny since List may not be JsAny
             value is List<*> -> {
                 buildJsonArray(value)
             }
-            // 处理从 jsGet 获取的 JsAny 类型，尝试识别为数组或 List
-            // 注意：在 Kotlin/JS 中，List 在运行时是 JavaScript 数组，所以先检查是否是数组
+            // Handle JsAny types from jsGet, try to identify as array or List
+            // Note: In Kotlin/JS, List is a JavaScript array at runtime, so check for array first
             value is JsAny -> {
-                // 检查是否是数组（通过检查 length 属性）
-                // 在 Kotlin/JS 中，List 在运行时是数组，所以 isArray 应该能匹配 List
+                // Check if it's an array (by checking length property)
+                // In Kotlin/JS, List is an array at runtime, so isArray should match List
                 if (isArray(value)) {
                     val length = getArrayLength(value)
                     val list = mutableListOf<Any?>()
@@ -329,7 +329,7 @@ object JsInteropUtils {
                     }
                     buildJsonArray(list)
                 } else {
-                    // 尝试识别为容器属性类型
+                    // Try to identify as container property types
                     val className = value::class.simpleName
                     when (className) {
                         "ListItemContainerProperty" -> {
@@ -343,7 +343,7 @@ object JsInteropUtils {
                                     "itemName" to prop.itemName,
                                 )
                             } else {
-                                // 如果类型转换失败，尝试通过属性访问
+                                // If type cast failed, try accessing via properties
                                 buildJsonObject(
                                     "itemCount" to getIntProperty(value, "itemCount"),
                                     "itemWidth" to getIntProperty(value, "itemWidth"),
@@ -371,7 +371,7 @@ object JsInteropUtils {
                                     "isEventCapture" to prop.isEventCapture,
                                 )
                             } else {
-                                // 通过属性访问
+                                // Access via properties
                                 buildJsonObject(
                                     "xPosition" to getIntProperty(value, "xPosition"),
                                     "yPosition" to getIntProperty(value, "yPosition"),
@@ -407,7 +407,7 @@ object JsInteropUtils {
                                     "content" to prop.content,
                                 )
                             } else {
-                                // 通过属性访问
+                                // Access via properties
                                 buildJsonObject(
                                     "xPosition" to getIntProperty(value, "xPosition"),
                                     "yPosition" to getIntProperty(value, "yPosition"),
@@ -437,7 +437,7 @@ object JsInteropUtils {
                                     "containerName" to prop.containerName,
                                 )
                             } else {
-                                // 通过属性访问
+                                // Access via properties
                                 buildJsonObject(
                                     "xPosition" to getIntProperty(value, "xPosition"),
                                     "yPosition" to getIntProperty(value, "yPosition"),
@@ -449,13 +449,13 @@ object JsInteropUtils {
                             }
                         }
                         else -> {
-                            // 尝试转换为字符串
+                            // Try to convert to string
                             "\"${escapeJson(value.toString())}\""
                         }
                     }
                 }
             }
-            // 处理容器属性类型（直接类型检查，适用于非 JsAny 的情况）
+            // Handle container property types (direct type check, for non-JsAny cases)
             value is ListItemContainerProperty -> buildJsonObject(
                 "itemCount" to value.itemCount,
                 "itemWidth" to value.itemWidth,
@@ -499,7 +499,7 @@ object JsInteropUtils {
                 "containerName" to value.containerName,
                 )
             else -> {
-                // 处理数组类型，使用类型名称字符串检查避免 Cloneable 问题
+                // Handle array types, using class name string check to avoid Cloneable issues
                 val arrayValue = tryConvertToArray(value)
                 if (arrayValue != null) {
                     buildJsonArray(arrayValue)
@@ -511,7 +511,7 @@ object JsInteropUtils {
     }
 
     /**
-     * 尝试将值转换为 List，用于处理 ByteArray 和 IntArray
+     * Try to convert a value to List, for handling ByteArray and IntArray.
      */
     @Suppress("UNCHECKED_CAST")
     private fun tryConvertToArray(value: Any?): List<*>? {
@@ -539,7 +539,7 @@ object JsInteropUtils {
     }
 
     /**
-     * 转义 JSON 字符串中的特殊字符
+     * Escape special characters in a JSON string.
      */
     private fun escapeJson(value: String): String = buildString {
         for (ch in value) {

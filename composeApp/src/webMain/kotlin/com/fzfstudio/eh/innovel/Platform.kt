@@ -7,6 +7,6 @@ interface Platform {
 expect fun getPlatform(): Platform
 
 /**
- * 获取当前时间戳（毫秒），用于性能追踪
+ * Get current timestamp in milliseconds, used for performance tracking.
  */
 expect fun currentTimeMs(): Double

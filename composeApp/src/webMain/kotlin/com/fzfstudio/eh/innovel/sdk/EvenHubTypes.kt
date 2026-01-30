@@ -1,24 +1,24 @@
 package com.fzfstudio.eh.innovel.sdk
 
 /**
- * 从 JS SDK 返回值解析出的 Kotlin 端模型。
+ * Kotlin models parsed from JS SDK return values.
  *
- * 我们将这些保留为纯 Kotlin 模型（没有 `external`），以避免
- * 同步所有 JS 声明并避免外部枚举弃用。
+ * These are kept as pure Kotlin models (no `external`) to avoid
+ * syncing all JS declarations and to avoid external enum deprecation.
  */
 data class UserInfo(
-    /** 用户 ID */
+    /** User ID */
     val uid: Int?,
-    /** 用户名 */
+    /** Username */
     val name: String,
-    /** 头像（图片原始数据） */
+    /** Avatar (raw image data) */
     val avatar: String,
-    /** 国家 */
+    /** Country */
     val country: String,
 )
 
 /**
- * 设备连接状态。
+ * Device connection status.
  */
 enum class DeviceConnectType {
     None,
@@ -39,25 +39,25 @@ enum class DeviceConnectType {
 }
 
 /**
- * 设备状态信息。
+ * Device status information.
  */
 data class DeviceStatus(
-    /** 设备序列号 */
+    /** Device serial number */
     val sn: String,
-    /** 连接类型 */
+    /** Connection type */
     val connectType: DeviceConnectType,
-    /** 是否佩戴中 */
+    /** Whether the device is being worn */
     val isWearing: Boolean?,
-    /** 电量 (0-100) */
+    /** Battery level (0-100) */
     val batteryLevel: Int?,
-    /** 是否充电中 */
+    /** Whether the device is charging */
     val isCharging: Boolean?,
-    /** 是否在充电盒中 */
+    /** Whether the device is in the charging case */
     val isInCase: Boolean?,
 )
 
 /**
- * 设备型号类型。
+ * Device model type.
  */
 enum class DeviceModel {
     G1,
@@ -74,18 +74,18 @@ enum class DeviceModel {
 }
 
 /**
- * 聚合的设备信息。
+ * Aggregated device information.
  */
 data class DeviceInfo(
-    /** 设备型号 */
+    /** Device model */
     val model: DeviceModel,
-    /** 设备序列号 */
+    /** Device serial number */
     val sn: String,
-    /** 当前设备状态 */
+    /** Current device status */
     var status: DeviceStatus?,
 ) {
     /**
-     * 如果 SN 匹配，则更新设备状态。
+     * Update device status if the SN matches.
      */
     fun updateStatus(status: DeviceStatus) {
         if (status.sn == sn) {
@@ -95,7 +95,7 @@ data class DeviceInfo(
 }
 
 /**
- * 操作系统事件类型枚举。
+ * OS event type enumeration.
  */
 enum class OsEventTypeList(val value: Int) {
     CLICK_EVENT(0),
@@ -105,15 +105,15 @@ enum class OsEventTypeList(val value: Int) {
     FOREGROUND_ENTER_EVENT(4),
     FOREGROUND_EXIT_EVENT(5),
     ABNORMAL_EXIT_EVENT(6);
-    
+
     companion object {
         fun fromInt(value: Int?): OsEventTypeList? {
             return values().find { it.value == value }
         }
-        
+
         fun fromString(value: String?): OsEventTypeList? {
             if (value == null) return null
-            return values().find { 
+            return values().find {
                 it.name.equals(value, ignoreCase = true) ||
                 it.name.replace("_EVENT", "").equals(value, ignoreCase = true)
             }
@@ -122,218 +122,218 @@ enum class OsEventTypeList(val value: Int) {
 }
 
 /**
- * 列表项事件。
+ * List item event.
  */
 data class ListItemEvent(
-    /** 容器 ID */
+    /** Container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 当前选中的项名称 */
+    /** Currently selected item name */
     val currentSelectItemName: String? = null,
-    /** 当前选中的项索引 */
+    /** Currently selected item index */
     val currentSelectItemIndex: Int? = null,
-    /** 事件类型 */
+    /** Event type */
     val eventType: OsEventTypeList? = null,
 )
 
 /**
- * 文本项事件。
+ * Text item event.
  */
 data class TextItemEvent(
-    /** 容器 ID */
+    /** Container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 事件类型 */
+    /** Event type */
     val eventType: OsEventTypeList? = null,
 )
 
 /**
- * 系统项事件。
+ * System item event.
  */
 data class SysItemEvent(
-    /** 事件类型 */
+    /** Event type */
     val eventType: OsEventTypeList? = null,
 )
 
 /**
- * EvenHub 发出的事件。
- * 
- * 新的结构直接包含解析后的事件对象，而不是原始的 JSON 字符串。
- * 开发者只需要判断哪个属性不为空，就可以直接使用对应的事件对象。
+ * Event emitted by EvenHub.
+ *
+ * The structure directly contains parsed event objects instead of raw JSON strings.
+ * Developers only need to check which property is non-null to use the corresponding event object.
  */
 data class EvenHubEvent(
-    /** 列表事件（如果存在） */
+    /** List event (if present) */
     val listEvent: ListItemEvent? = null,
-    /** 文本事件（如果存在） */
+    /** Text event (if present) */
     val textEvent: TextItemEvent? = null,
-    /** 系统事件（如果存在） */
+    /** System event (if present) */
     val sysEvent: SysItemEvent? = null,
-    /** 原始 JSON 数据（可选，便于调试/回放） */
+    /** Raw JSON data (optional, useful for debugging/replay) */
     val jsonData: String? = null,
 )
 
 /**
- * EvenHub - PB 接口参数模型（对齐宿主 BleG2CmdProtoEvenHubExt）
- * 列表项容器属性。
+ * EvenHub PB interface parameter model (aligned with host BleG2CmdProtoEvenHubExt).
+ * List item container properties.
  */
 data class ListItemContainerProperty(
-    /** 列表项数量 */
+    /** Number of list items */
     val itemCount: Int? = null,
-    /** 单个项宽度 */
+    /** Width of a single item */
     val itemWidth: Int? = null,
-    /** 是否启用项选择边框 (1: 启用, 0: 禁用) */
+    /** Whether item selection border is enabled (1: enabled, 0: disabled) */
     val isItemSelectBorderEn: Int? = null,
-    /** 项名称列表 */
+    /** List of item names */
     val itemName: List<String>? = null,
 )
 
 /**
- * 列表容器属性。
+ * List container properties.
  */
 data class ListContainerProperty(
-    /** X 坐标位置 */
+    /** X position */
     val xPosition: Int? = null,
-    /** Y 坐标位置 */
+    /** Y position */
     val yPosition: Int? = null,
-    /** 容器宽度 */
+    /** Container width */
     val width: Int? = null,
-    /** 容器高度 */
+    /** Container height */
     val height: Int? = null,
-    /** 边框宽度 */
+    /** Border width */
     val borderWidth: Int? = null,
-    /** 边框颜色值 */
+    /** Border color value */
     val borderColor: Int? = null,
-    /** 边框圆角半径 */
+    /** Border corner radius */
     val borderRdaius: Int? = null,
-    /** 内边距长度 */
+    /** Padding length */
     val paddingLength: Int? = null,
-    /** 唯一容器 ID */
+    /** Unique container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 列表内的项属性 */
+    /** Item properties within the list */
     val itemContainer: ListItemContainerProperty? = null,
-    /** 是否捕获事件 */
+    /** Whether to capture events */
     val isEventCapture: Int? = null,
 )
 
 /**
- * 文本容器属性。
+ * Text container properties.
  */
 data class TextContainerProperty(
-    /** X 坐标位置 */
+    /** X position */
     val xPosition: Int? = null,
-    /** Y 坐标位置 */
+    /** Y position */
     val yPosition: Int? = null,
-    /** 容器宽度 */
+    /** Container width */
     val width: Int? = null,
-    /** 容器高度 */
+    /** Container height */
     val height: Int? = null,
-    /** 边框宽度 */
+    /** Border width */
     val borderWidth: Int? = null,
-    /** 边框颜色值 */
+    /** Border color value */
     val borderColor: Int? = null,
-    /** 边框圆角半径 */
+    /** Border corner radius */
     val borderRdaius: Int? = null,
-    /** 内边距长度 */
+    /** Padding length */
     val paddingLength: Int? = null,
-    /** 唯一容器 ID */
+    /** Unique container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 是否捕获事件 */
+    /** Whether to capture events */
     val isEventCapture: Int? = null,
-    /** 文本内容 */
+    /** Text content */
     val content: String? = null,
 )
 
 /**
- * 图片容器属性。
+ * Image container properties.
  */
 data class ImageContainerProperty(
-    /** X 坐标位置 */
+    /** X position */
     val xPosition: Int? = null,
-    /** Y 坐标位置 */
+    /** Y position */
     val yPosition: Int? = null,
-    /** 容器宽度 */
+    /** Container width */
     val width: Int? = null,
-    /** 容器高度 */
+    /** Container height */
     val height: Int? = null,
-    /** 唯一容器 ID */
+    /** Unique container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
 )
 
 /**
- * 创建启动页容器的数据结构。
+ * Data structure for creating a startup page container.
  */
 data class CreateStartUpPageContainer(
-    /** 容器总数 */
+    /** Total number of containers */
     val containerTotalNum: Int? = null,
-    /** 列表容器对象列表 */
+    /** List of list container objects */
     val listObject: List<ListContainerProperty>? = null,
-    /** 文本容器对象列表 */
+    /** List of text container objects */
     val textObject: List<TextContainerProperty>? = null,
-    /** 图片容器对象列表 */
+    /** List of image container objects */
     val imageObject: List<ImageContainerProperty>? = null,
 )
 
 /**
- * 重建页面容器的数据结构。
+ * Data structure for rebuilding a page container.
  */
 data class RebuildPageContainer(
-    /** 容器总数 */
+    /** Total number of containers */
     val containerTotalNum: Int? = null,
-    /** 列表容器对象列表 */
+    /** List of list container objects */
     val listObject: List<ListContainerProperty>? = null,
-    /** 文本容器对象列表 */
+    /** List of text container objects */
     val textObject: List<TextContainerProperty>? = null,
-    /** 图片容器对象列表 */
+    /** List of image container objects */
     val imageObject: List<ImageContainerProperty>? = null,
 )
 
 /**
- * 更新图片原始数据的数据结构。
- * 
- * 对应宿主 Dart：`EvenHubImageContainer`
- * 
- * 说明：
- * - 这里只做字段模型 + JSON 映射，不做 protobuf bytes 编解码
- * - `imageData` 建议传 **number[]**（宿主 `List<int>` 最好接）
- * - 若传 Uint8Array/ArrayBuffer，会在 `toJson` 时转换为 number[]
+ * Data structure for updating image raw data.
+ *
+ * Corresponds to host Dart: `EvenHubImageContainer`
+ *
+ * Notes:
+ * - This only handles field model + JSON mapping, not protobuf bytes encoding/decoding
+ * - `imageData` should preferably be **number[]** (host `List<int>` works best)
+ * - If Uint8Array/ArrayBuffer is passed, it will be converted to number[] during `toJson`
  */
 data class ImageRawDataUpdate(
-    /** 容器 ID */
+    /** Container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 图片数据（可以是 number[]、string、Uint8Array 或 ArrayBuffer） */
+    /** Image data (can be number[], string, Uint8Array, or ArrayBuffer) */
     val imageData: Any? = null,
 )
 
 /**
- * 升级文本容器内容的数据结构。
+ * Data structure for upgrading text container content.
  */
 data class TextContainerUpgrade(
-    /** 容器 ID */
+    /** Container ID */
     val containerID: Int? = null,
-    /** 容器名称 */
+    /** Container name */
     val containerName: String? = null,
-    /** 内容偏移量 */
+    /** Content offset */
     val contentOffset: Int? = null,
-    /** 内容长度 */
+    /** Content length */
     val contentLength: Int? = null,
-    /** 新的文本内容 */
+    /** New text content */
     val content: String? = null,
 )
 
 /**
- * 关闭容器的数据结构。
+ * Data structure for shutting down a container.
  */
 data class ShutDownContainer(
-    /** 退出模式 (默认 0) */
+    /** Exit mode (default 0) */
     val exitMode: Int = 0,
 )

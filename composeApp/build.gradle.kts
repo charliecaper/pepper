@@ -53,9 +53,9 @@ kotlin {
         val webMain by creating {
             dependsOn(commonMain)
             dependencies {
-                // 使用 npm 包 @evenrealities/even_hub_sdk
+                // npm package @evenrealities/even_hub_sdk
                 implementation(npm("@evenrealities/even_hub_sdk", "^0.0.6"))
-                // 协程库用于 Promise await
+                // Coroutines library for Promise await
                 implementation(libs.kotlinx.coroutines.core)
             }
         }

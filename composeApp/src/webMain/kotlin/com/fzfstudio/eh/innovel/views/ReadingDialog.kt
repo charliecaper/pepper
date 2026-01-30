@@ -24,8 +24,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.fzfstudio.eh.innovel.models.BookModel
 
 /**
- * 阅读弹窗组件。
- * 仅可通过“退出阅读”按钮关闭。
+ * Reading dialog component.
+ * Can only be closed via the "Exit Reading" button.
  */
 @Composable
 fun ReadingDialog(
@@ -71,13 +71,13 @@ fun ReadingDialog(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "正在阅读....",
+                    text = "Reading....",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(onClick = onExit) {
-                    Text(text = "退出阅读")
+                    Text(text = "Exit Reading")
                 }
             }
         }

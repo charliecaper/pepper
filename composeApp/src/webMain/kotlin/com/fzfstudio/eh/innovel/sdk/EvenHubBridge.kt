@@ -10,53 +10,53 @@ import kotlin.js.JsAny
  *
  * This is kept as expect/actual because Kotlin/Wasm JS interop has stricter type requirements than Kotlin/JS.
  *
- * 步骤1：在 `composeApp/build.gradle.kts` 的 `webMain` 中添加本地 npm 依赖 `even_hub_sdk`。
- * 步骤2：在业务使用前先调用 `ensureEvenAppBridge()`，等待 SDK 内部 bridge 就绪。
- * 步骤3：调用原生能力使用 `callEvenApp("method", params)`；需要参数时优先用 `callEvenAppJson("method", "{...}")`。
- * 步骤4：监听设备状态变化使用 `observeDeviceStatus { ... }`。
+ * Step 1: Add the local npm dependency `even_hub_sdk` in `composeApp/build.gradle.kts` under `webMain`.
+ * Step 2: Call `ensureEvenAppBridge()` before using any SDK methods to wait for the bridge to be ready.
+ * Step 3: Call native methods with `callEvenApp("method", params)`; prefer `callEvenAppJson("method", "{...}")` when parameters are needed.
+ * Step 4: Listen for device status changes with `observeDeviceStatus { ... }`.
  *
- * 注意：callEvenApp 数据结构中，消息的 data 字段直接等于 params。
- * 消息结构：{ type: "call_even_app_method", method: method, data: params }
+ * Note: In the callEvenApp message structure, the data field equals params directly.
+ * Message structure: { type: "call_even_app_method", method: method, data: params }
  */
 expect suspend fun ensureEvenAppBridge()
 
 /**
- * 调用 Even App 方法
- * 
- * 注意：params 会直接作为消息的 data 字段传递。
- * JS SDK 内部会构建消息结构：{ type: "call_even_app_method", method: method, data: params }
- * 
- * @param method 方法名称
- * @param params 方法参数（可选，JsAny 对象，会直接作为 data 传递。无参数时传 null 或不传）
- * @return 方法执行结果
+ * Call an Even App method.
+ *
+ * Note: params are passed directly as the message's data field.
+ * The JS SDK builds the message structure internally: { type: "call_even_app_method", method: method, data: params }
+ *
+ * @param method Method name
+ * @param params Method parameters (optional JsAny object, passed directly as data. Pass null or omit when no parameters are needed)
+ * @return Method execution result
  */
 expect suspend fun callEvenApp(method: String, params: JsAny? = null): JsAny?
 
 /**
  * Convenience overload for shared `webMain` code: pass params as a JSON string (object/array/literal).
  * 
- * 注意：paramsJson 会被解析为 JS 对象，然后直接作为消息的 data 字段传递。
- * 
+ * Note: paramsJson is parsed into a JS object, then passed directly as the message's data field.
+ *
  * Example: `callEvenAppJson("setLocalStorage", "{\"key\":\"k\",\"value\":\"v\"}")`
- * 这会构建消息：{ type: "call_even_app_method", method: "setLocalStorage", data: { key: "k", value: "v" } }
+ * This builds the message: { type: "call_even_app_method", method: "setLocalStorage", data: { key: "k", value: "v" } }
  */
 expect suspend fun callEvenAppJson(method: String, paramsJson: String): JsAny?
 
 /**
- * 获取用户信息
+ * Get user info.
  */
 expect suspend fun getUserInfo(): UserInfo?
 
 /**
- * 获取设备信息（眼镜/戒指信息）
+ * Get device info (glasses/ring info).
  */
 expect suspend fun getDeviceInfo(): DeviceInfo?
 
 
 /**
- * EvenHub - PB 接口（对齐宿主 BleG2CmdProtoEvenHubExt）
+ * EvenHub - PB interface (aligned with host BleG2CmdProtoEvenHubExt).
  *
- * 说明：统一以 JSON 字符串传参，避免在 shared 层直接构建 JsAny。
+ * Note: Parameters are passed as JSON strings to avoid constructing JsAny directly in shared code.
  */
 expect suspend fun createStartUpPageContainer(container: CreateStartUpPageContainer): Int?
 
@@ -69,15 +69,15 @@ expect suspend fun textContainerUpgrade(container: TextContainerUpgrade): Boolea
 expect suspend fun shutDownPageContainer(container: ShutDownContainer): Boolean
 
 /**
- * 监听设备状态变化
- * @param onChange 状态变化时的回调函数，参数为完整的设备状态对象
- * @return 取消监听的函数
+ * Observe device status changes.
+ * @param onChange Callback invoked when the device status changes, receiving the full device status object
+ * @return A function to cancel the observation
  */
 expect fun observeDeviceStatus(onChange: (DeviceStatus?) -> Unit): () -> Unit
 
 /**
- * 监听 EvenHub 事件
- * @param onChange 事件变化时的回调函数，参数为 EvenHubEvent 对象
- * @return 取消监听的函数
+ * Observe EvenHub events.
+ * @param onChange Callback invoked when an event occurs, receiving an EvenHubEvent object
+ * @return A function to cancel the observation
  */
 expect fun observeEvenHubEvent(onChange: (EvenHubEvent?) -> Unit): () -> Unit

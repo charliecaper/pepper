@@ -10,7 +10,7 @@ class WasmPlatform : Platform {
 
 actual fun getPlatform(): Platform = WasmPlatform()
 
-// 使用 JS 互操作获取当前时间
+// Use JS interop to get current time
 @JsFun("() => Date.now()")
 private external fun jsDateNow(): Double
 

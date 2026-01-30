@@ -50,7 +50,7 @@ private fun formatKnownModel(obj: Any?): String {
             if (jsObj == null) {
                 obj.toString()
             } else {
-                // 在 WasmJs 中，直接使用 JSON.stringify 格式化对象
+                // In WasmJs, use JSON.stringify directly to format objects
                 JSON.stringify(jsObj)
             }
         }

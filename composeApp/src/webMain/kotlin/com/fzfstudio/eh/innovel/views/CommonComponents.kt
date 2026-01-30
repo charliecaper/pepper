@@ -16,10 +16,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
 /**
- * 错误提示横幅组件。
- * 用于显示错误信息。
+ * Error banner component.
+ * Used to display error messages.
  *
- * @param message 错误信息文本
+ * @param message Error message text
  */
 @Composable
 fun ErrorBanner(message: String) {
@@ -39,11 +39,11 @@ fun ErrorBanner(message: String) {
 }
 
 /**
- * 占位卡片组件。
- * 用于在数据为空或加载中时显示占位内容。
+ * Placeholder card component.
+ * Used to display placeholder content when data is empty or loading.
  *
- * @param modifier 修饰符
- * @param text 占位文本
+ * @param modifier Modifier
+ * @param text Placeholder text
  */
 @Composable
 fun PlaceholderCard(

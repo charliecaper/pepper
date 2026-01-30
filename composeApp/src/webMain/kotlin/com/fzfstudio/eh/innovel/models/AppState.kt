@@ -13,55 +13,55 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * 页面 UI 状态聚合，供视图层渲染。
+ * Aggregated page UI state for rendering in the view layer.
  */
 data class AppUiState(
-    /** SDK 桥接是否已初始化完成 */
+    /** Whether the SDK bridge has finished initializing */
     val isBridgeReady: Boolean = false,
-    /** 用户信息（可能为空） */
+    /** User info (may be null) */
     val userInfo: UserInfo? = null,
-    /** 设备基础信息（可能为空） */
+    /** Device basic info (may be null) */
     val deviceInfo: DeviceInfo? = null,
-    /** 设备状态（可能为空） */
+    /** Device status (may be null) */
     val deviceStatus: DeviceStatus? = null,
-    /** 书架图书列表 */
+    /** Bookshelf book list */
     val books: List<BookModel> = emptyList(),
-    /** 页面级错误提示（可为空） */
+    /** Page-level error message (may be null) */
     val errorMessage: String? = null,
-    /** 是否在大屏阅读 */
+    /** Whether in full-screen reading mode */
     val isFullScreenReading: Boolean = false,
 )
 
 /**
- * 页面业务状态与数据拉取逻辑。
+ * Page business state and data fetching logic.
  */
 class AppState {
-    /** 页面 UI 状态 */
+    /** Page UI state */
     var uiState by mutableStateOf(AppUiState(books = emptyList()))
         private set
-    
-    /** 取消设备状态监听的函数 */
+
+    /** Unsubscribe function for device status listener */
     private var unsubscribeDeviceStatus: (() -> Unit)? = null
-    /** 取消 EvenHubEvent 监听的函数 */
+    /** Unsubscribe function for EvenHubEvent listener */
     private var unsubscribeEvenHubEvent: (() -> Unit)? = null
-    
-    /** 当前阅读的书本 ID，默认为 book_001 */
+
+    /** Currently reading book ID, defaults to book_001 */
     private var currentReadingBookId: String = "book_001"
-    
-    /** 当前阅读的章节索引，默认为 0 */
+
+    /** Current chapter index, defaults to 0 */
     private var currentChapterIndex: Int = 0
-    
-    /** 阅读片段列表（按 1KB 拆分） */
+
+    /** Reading fragment list (split by character count) */
     private var readingFragments: List<String> = emptyList()
-    
-    /** 当前阅读的片段索引 */
+
+    /** Current reading fragment index */
     private var readingFragmentIndex: Int = 0
-    
-    /** 协程作用域，用于在事件处理中调用 suspend 函数 */
+
+    /** Coroutine scope for calling suspend functions in event handlers */
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     /**
-     * 初始化 SDK 桥接并拉取用户/设备信息。
+     * Initialize the SDK bridge and fetch user/device info.
      */
     suspend fun initialize() {
         if (uiState.isBridgeReady) return
@@ -77,10 +77,10 @@ class AppState {
                     uiState = uiState.copy(errorMessage = "Failed to get device info: ${error.message}")
                     null
                 }
-            // 从 JSON 文件加载图书数据
+            // Load book data from JSON file
             val books = runCatching { loadBooksFromJson() }
                 .getOrElse { error ->
-                    // 如果加载失败，使用默认数据
+                    // If loading fails, use default data
                     defaultBooks()
                 }
             uiState = uiState.copy(
@@ -90,42 +90,42 @@ class AppState {
                 deviceStatus = deviceInfo?.status,
                 books = books,
             )
-            // 初始化完成后，设置设备状态监听
+            // After initialization, set up device status listener
             setupDeviceStatusObserver()
-            // 设置 EvenHubEvent 监听
+            // Set up EvenHubEvent listener
             setupEvenHubEventObserver()
         } catch (e: Exception) {
             uiState = uiState.copy(errorMessage = "Failed to initialize bridge: ${e.message}")
         }
     }
-    
+
     /**
-     * 设置设备状态监听
+     * Set up device status observer.
      */
     private fun setupDeviceStatusObserver() {
-        // 取消之前的监听（如果存在）
+        // Cancel previous listener (if exists)
         unsubscribeDeviceStatus?.invoke()
-        // 设置新的监听
+        // Set up new listener
         unsubscribeDeviceStatus = observeDeviceStatus { status ->
             if (status != null) {
-                // 更新设备状态
+                // Update device status
                 updateDeviceStatus(status)
             }
         }
     }
-    
+
     /**
-     * 设置 EvenHubEvent 监听
+     * Set up EvenHubEvent observer.
      */
     private fun setupEvenHubEventObserver() {
-        // 取消之前的监听（如果存在）
+        // Cancel previous listener (if exists)
         unsubscribeEvenHubEvent?.invoke()
-        // 设置新的监听并解析事件数据
+        // Set up new listener and parse event data
         unsubscribeEvenHubEvent = observeEvenHubEvent { event ->
             if (event != null) {
-                // 新的结构直接包含解析后的事件对象
-                // 只需要判断哪个属性不为空，就可以直接使用对应的事件对象
-                
+                // The new structure directly contains parsed event objects.
+                // Just check which property is not null and use the corresponding event object.
+
                 when {
                     event.listEvent != null -> {
                         val listEvent = event.listEvent
@@ -149,29 +149,29 @@ class AppState {
                         handleSysItemEvent(sysEvent)
                     }
                     else -> {
-                        // 如果所有事件都为空，打印调试信息
+                        // If all events are null, print debug info
                         println("[EvenHubEvent] No event data found. jsonData: ${event.jsonData}")
                     }
                 }
             }
         }
     }
-    
+
     /**
-     * 处理列表项事件
+     * Handle list item event.
      */
     private fun handleListItemEvent(event: ListItemEvent) {
-        // 如果接收到数据带有 currentSelectItemIndex，更新章节内容
+        // If data contains currentSelectItemIndex, update chapter content
         val itemIndex = event.currentSelectItemIndex
         if (itemIndex != null && itemIndex >= 0) {
-            // 通过当前阅读的书本 ID 获取书本
+            // Find book by current reading book ID
             val book = uiState.books.find { it.id == currentReadingBookId }
             if (book != null && itemIndex < book.chapters.size) {
-                // 获取对应章节
+                // Get corresponding chapter
                 val chapter = book.chapters[itemIndex]
-                // 更新当前章节索引
+                // Update current chapter index
                 currentChapterIndex = itemIndex
-                // 在协程作用域中调用 updateChapterInfo 更新章节内容
+                // Call updateChapterInfo in coroutine scope
                 coroutineScope.launch {
                     updateChapterInfo(chapter)
                 }
@@ -180,21 +180,21 @@ class AppState {
             }
         }
     }
-    
+
     /**
-     * 处理文本项事件
+     * Handle text item event.
      */
     private fun handleTextItemEvent(event: TextItemEvent) {
-        // 只在全屏阅读模式下处理滚动事件
+        // Only handle scroll events in full-screen reading mode
         if (!uiState.isFullScreenReading) {
             println("[TextEvent] Scroll event: Not in full screen reading mode")
             return
         }
-        
+
         when (event.eventType) {
             OsEventTypeList.SCROLL_BOTTOM_EVENT -> {
                 println("[TextEvent] Scroll bottom event: Total fragments: ${readingFragments.size}, Current index: ${readingFragmentIndex}")
-                // 向下滚动，显示下一个片段
+                // Scroll down, show next fragment
                 readingFragmentIndex+=1
                 if (readingFragmentIndex > readingFragments.size) {
                     readingFragmentIndex = readingFragments.size - 1
@@ -207,7 +207,7 @@ class AppState {
             }
             OsEventTypeList.SCROLL_TOP_EVENT -> {
                 println("[TextEvent] Scroll top event: Total fragments: ${readingFragments.size}, Current index: ${readingFragmentIndex}")
-                // 向上滚动，显示上一个片段
+                // Scroll up, show previous fragment
                 readingFragmentIndex-=1
                 if (readingFragmentIndex < 0) {
                     readingFragmentIndex = 0
@@ -219,24 +219,24 @@ class AppState {
                 }
             }
             else -> {
-                // 其他事件类型不处理
+                // Other event types are not handled
             }
         }
     }
-    
+
     /**
-     * 处理系统事件
+     * Handle system event.
      */
     private fun handleSysItemEvent(event: SysItemEvent) {
-        // 处理系统级事件，比如进入前台、退出前台等
+        // Handle system-level events such as foreground enter/exit
         when (event.eventType) {
             OsEventTypeList.DOUBLE_CLICK_EVENT -> {
                 if (!uiState.isFullScreenReading) {
-                    // 如果不在大屏阅读，进入全屏阅读
+                    // Not in full-screen reading, enter full-screen reading
                     val book = uiState.books.find { it.id == currentReadingBookId }
                     if (book != null && currentChapterIndex < book.chapters.size) {
                         val chapter = book.chapters[currentChapterIndex]
-                        // 在协程作用域中调用 fullScreenReading 并设置大屏状态为 true
+                        // Call fullScreenReading in coroutine scope and set full-screen state to true
                         coroutineScope.launch {
                             fullScreenReading(chapter)
                             uiState = uiState.copy(isFullScreenReading = true)
@@ -245,10 +245,10 @@ class AppState {
                         println("[SysEvent] Book not found or invalid chapter index: bookId=$currentReadingBookId, index=$currentChapterIndex")
                     }
                 } else {
-                    // 如果已经在大屏阅读，再次双击则退出大屏，重建阅读页面
+                    // Already in full-screen reading, double-click again to exit and rebuild reading page
                     val book = uiState.books.find { it.id == currentReadingBookId }
                     if (book != null) {
-                        // 在协程作用域中调用 startReadingBook，isRebuild 为 true，并设置大屏状态为 false
+                        // Call startReadingBook with isRebuild=true in coroutine scope, set full-screen state to false
                         coroutineScope.launch {
                             startReadingBook(book, isRebuild = true)
                             uiState = uiState.copy(isFullScreenReading = false)
@@ -268,13 +268,13 @@ class AppState {
                 println("[SysEvent] App abnormal exit")
             }
             else -> {
-                // 其他系统事件
+                // Other system events
             }
         }
     }
-    
+
     /**
-     * 清理资源，取消所有监听
+     * Clean up resources, cancel all listeners.
      */
     fun dispose() {
         unsubscribeDeviceStatus?.invoke()
@@ -284,7 +284,7 @@ class AppState {
     }
 
     /**
-     * 监听到设备状态更新时刷新 UI。
+     * Refresh UI when a device status update is received.
      */
     fun updateDeviceStatus(status: DeviceStatus?) {
         if (status == null) return
@@ -294,17 +294,17 @@ class AppState {
     }
 
     /**
-     * 创建图书视图窗口
+     * Create the book reading view on the glasses.
      */
     suspend fun startReadingBook(book: BookModel, isRebuild: Boolean = false) {
-        // 更新当前阅读的书本 ID
+        // Update current reading book ID
         currentReadingBookId = book.id
-        // 如果不是重建，重置章节索引为 0；如果是重建，保持当前章节索引
+        // If not rebuilding, reset chapter index to 0; if rebuilding, keep current chapter index
         if (!isRebuild) {
             currentChapterIndex = 0
         }
-        //  1、创建页面属性：
-        //  - 1.1、图书说明
+        // 1. Create page properties:
+        // 1.1. Book info
         val bookInfo = TextContainerProperty(
             containerID = 2,
             containerName = "info",
@@ -316,9 +316,9 @@ class AppState {
             borderColor = 13,
             borderRdaius = 6,
             paddingLength = 0,
-            content = "《${book.title}》--作者:${book.author}",
+            content = "${book.title} -- ${book.author}",
         )
-        //  - 1.2、章节列表
+        // 1.2. Chapter list
         val bookChapters = listOf(
             ListContainerProperty(
                 containerID = 1,
@@ -336,15 +336,15 @@ class AppState {
                     itemCount = book.totalChapters,
                     itemWidth = 100,
                     isItemSelectBorderEn = 1,
-                    itemName = book.chapters.map { "第${it.index}章" }
+                    itemName = book.chapters.map { "Ch ${it.index}" }
                 )
             )
         )
-        //  - 1.3、章节概要（使用当前章节索引）
+        // 1.3. Chapter summary (using current chapter index)
         val currentChapter = if (currentChapterIndex < book.chapters.size) {
             book.chapters[currentChapterIndex]
         } else {
-            book.chapters[0] // 如果索引无效，使用第一章
+            book.chapters[0] // If index is invalid, use first chapter
         }
         val chapterInfo = TextContainerProperty(
             containerID = 3,
@@ -357,7 +357,7 @@ class AppState {
             borderColor = 13,
             borderRdaius = 6,
             paddingLength = 12,
-            content = "${currentChapter.title}\n\n${currentChapter.displayContent}\n\n双击全屏阅读>>",
+            content = "${currentChapter.title}\n\n${currentChapter.displayContent}\n\nDouble-click for full screen >>",
         )
         runCatching {
             if (isRebuild) {
@@ -385,14 +385,14 @@ class AppState {
     }
 
     /**
-     * 更新章节概要
+     * Update chapter summary content.
      */
     suspend fun updateChapterInfo(chapter: BookChapterModel) {
-        //  1、初始化更新的对象
+        // Initialize update object
         val update = TextContainerUpgrade(
             containerID = 3,
             containerName = "content",
-            content = "${chapter.title}\n\n${chapter.displayContent}\n\n双击全屏阅读>>"
+            content = "${chapter.title}\n\n${chapter.displayContent}\n\nDouble-click for full screen >>"
         )
         runCatching {
             textContainerUpgrade(update)
@@ -402,20 +402,20 @@ class AppState {
     }
 
     /**
-     * 全屏阅读
+     * Enter full-screen reading mode.
      */
     suspend fun fullScreenReading(chapter: BookChapterModel) {
-        // 将章节内容按字数拆分成片段，每个片段最大200字
+        // Split chapter content into fragments, max 200 characters each
         readingFragments = splitContentBySize(chapter.content, 200)
         readingFragmentIndex = 0
-        
-        // 显示第一个片段
+
+        // Display the first fragment
         val currentFragment = if (readingFragments.isNotEmpty()) {
             readingFragments[readingFragmentIndex]
         } else {
             chapter.content
         }
-        
+
         val container = RebuildPageContainer(
             containerTotalNum = 1,
             textObject = listOf(
@@ -441,12 +441,12 @@ class AppState {
             uiState = uiState.copy(errorMessage = "Failed to rebuild page view: ${error.message}")
         }
     }
-    
+
     /**
-     * 更新阅读片段
+     * Update reading fragment.
      */
     suspend fun updateReadingFragment(index: Int) {
-        // 确保索引在有效范围内
+        // Ensure index is within valid range
         if (index < 0 || index >= readingFragments.size) {
             println("[ReadingFragment] Invalid index: $index, fragments size: ${readingFragments.size}")
             return
@@ -464,45 +464,45 @@ class AppState {
             uiState = uiState.copy(errorMessage = "Failed to update reading fragment: ${error.message}")
         }
     }
-    
+
     /**
-     * 将内容按指定字数拆分成片段
-     * @param content 要拆分的内容
-     * @param maxChars 每个片段的最大字数（默认 200 字）
-     * @return 拆分后的片段列表
+     * Split content into fragments by character count.
+     * @param content The content to split
+     * @param maxChars Maximum characters per fragment (default 200)
+     * @return List of content fragments
      */
     private fun splitContentBySize(content: String, maxChars: Int = 200): List<String> {
         if (content.isEmpty()) return emptyList()
-        
+
         val fragments = mutableListOf<String>()
         var currentFragment = StringBuilder()
         var currentCharCount = 0
-        
+
         for (char in content) {
-            // 如果添加当前字符会超过限制，保存当前片段并开始新片段
+            // If adding current character would exceed the limit, save current fragment and start a new one
             if (currentCharCount >= maxChars && currentFragment.isNotEmpty()) {
                 fragments.add(currentFragment.toString())
                 currentFragment = StringBuilder()
                 currentCharCount = 0
             }
-            
-            // 添加当前字符
+
+            // Add current character
             currentFragment.append(char)
             currentCharCount++
         }
-        
-        // 添加最后一个片段（如果有剩余内容）
+
+        // Add the last fragment (if there is remaining content)
         if (currentFragment.isNotEmpty()) {
             fragments.add(currentFragment.toString())
         }
-        
+
         return fragments
     }
 
-    
+
 
     /**
-     * 退出阅读
+     * Exit reading mode.
      */
     suspend fun exitReading() {
         runCatching {
@@ -514,18 +514,18 @@ class AppState {
 }
 
 /**
- * 从 JSON 文件加载图书数据。
+ * Load book data from JSON file.
  */
 private suspend fun loadBooksFromJson(): List<BookModel> {
     val json = JsInteropUtils.fetchJson("books.json") ?: return emptyList()
-    
-    // 检查是否是数组
+
+    // Check if it is an array
     if (JsInteropUtils.getType(json) != "object" || !JsInteropUtils.isArray(json)) return emptyList()
-    
-    // 使用 JsInteropUtils 访问数组长度和元素
+
+    // Use JsInteropUtils to access array length and elements
     val length = JsInteropUtils.getArrayLength(json)
     val result = mutableListOf<BookModel>()
-    
+
     for (i in 0 until length) {
         val bookJson = JsInteropUtils.getArrayElement(json, i) ?: continue
         val id = JsInteropUtils.getStringProperty(bookJson, "id") ?: continue
@@ -533,20 +533,20 @@ private suspend fun loadBooksFromJson(): List<BookModel> {
         val author = JsInteropUtils.getStringProperty(bookJson, "author") ?: continue
         val type = JsInteropUtils.getStringProperty(bookJson, "type") ?: continue
         val readChapters = JsInteropUtils.getIntProperty(bookJson, "readChapters") ?: 0
-        
-        // 解析章节列表（如果有）
+
+        // Parse chapter list (if present)
         val chaptersJson = JsInteropUtils.getProperty(bookJson, "chapters")
         val chapters = if (chaptersJson != null && JsInteropUtils.isArray(chaptersJson)) {
             val chaptersLength = JsInteropUtils.getArrayLength(chaptersJson)
             val chaptersList = mutableListOf<BookChapterModel>()
-            
+
             for (j in 0 until chaptersLength) {
                 val chapterJson = JsInteropUtils.getArrayElement(chaptersJson, j) ?: continue
                 val chapterIndex = JsInteropUtils.getIntProperty(chapterJson, "index") ?: continue
                 val chapterTitle = JsInteropUtils.getStringProperty(chapterJson, "title") ?: continue
                 val chapterContent = JsInteropUtils.getStringProperty(chapterJson, "content") ?: ""
                 val hadRead = JsInteropUtils.getBooleanProperty(chapterJson, "hadRead") ?: false
-                
+
                 chaptersList.add(
                     BookChapterModel(
                         bookId = id,
@@ -562,7 +562,7 @@ private suspend fun loadBooksFromJson(): List<BookModel> {
         } else {
             emptyList()
         }
-        
+
         result.add(
             BookModel(
                 id = id,
@@ -575,32 +575,32 @@ private suspend fun loadBooksFromJson(): List<BookModel> {
             }
         )
     }
-    
+
     return result
 }
 
 /**
- * 书架默认占位数据（当 JSON 加载失败时使用）。
+ * Default bookshelf placeholder data (used when JSON loading fails).
  */
 private fun defaultBooks(): List<BookModel> {
     return listOf(
         BookModel(
             id = "book_001",
-            title = "其武修魔传",
-            author = "王子琦",
-            type = "修仙"
+            title = "The Martial Demon Chronicles",
+            author = "Z. Wang",
+            type = "Fantasy"
         ),
         BookModel(
             id = "book_002",
-            title = "山海奇闻录",
-            author = "南烟",
-            type = "奇幻"
+            title = "Tales of Mythic Seas",
+            author = "Nan Yan",
+            type = "Adventure"
         ),
         BookModel(
             id = "book_003",
-            title = "夜行者笔记",
-            author = "陆离",
-            type = "悬疑"
+            title = "Nightwalker's Notes",
+            author = "Lu Li",
+            type = "Mystery"
         ),
     ).onEach {
         it.readChapters = (0..it.totalChapters).random()

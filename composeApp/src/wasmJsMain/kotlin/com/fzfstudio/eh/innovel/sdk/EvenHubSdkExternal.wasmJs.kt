@@ -9,11 +9,11 @@ import kotlin.js.Promise
 import kotlin.js.definedExternally
 
 /**
- * @evenrealities/even_hub_sdk 的 Kotlin/WasmJs externals。
+ * Kotlin/WasmJs externals for @evenrealities/even_hub_sdk.
  *
- * 步骤1：本文件只放 `external` 声明，映射 npm 包 `@evenrealities/even_hub_sdk` 的导出。
- * 步骤2：Wasm 的 JS interop 类型更严格，参数/返回值使用 `JsAny?`。
- * 步骤3：业务调用统一走 `EvenHubBridge.wasmJs.kt` 的 `actual` 封装，避免到处处理 Promise。
+ * Step 1: This file only contains `external` declarations, mapping exports from npm package `@evenrealities/even_hub_sdk`.
+ * Step 2: Wasm JS interop types are stricter; parameters/return values use `JsAny?`.
+ * Step 3: Business calls go through `EvenHubBridge.wasmJs.kt`'s `actual` wrappers to avoid handling Promises everywhere.
  */
 external class EvenAppBridge : JsAny {
     val ready: Boolean

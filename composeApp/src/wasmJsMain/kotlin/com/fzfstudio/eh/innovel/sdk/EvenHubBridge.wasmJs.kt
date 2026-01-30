@@ -10,15 +10,15 @@ import kotlin.js.JsAny
 import kotlin.js.Promise
 
 /**
- * even_hub_sdk 的 Kotlin/WasmJs 实现（actual）。
+ * Kotlin/WasmJs implementation (actual) of even_hub_sdk.
  *
- * 步骤1：Wasm 侧不能直接复用 Kotlin/JS 的 `await`，这里用 Promise->suspend 的 `awaitWasm()`。
- * 步骤2：调用方法：`callEvenApp("getUserInfo")` 或 `callEvenApp("method", params)`。
- * 步骤3：带参调用：需要传 `JsAny?`；共享代码可用 `callEvenAppJson` 传 JSON 字符串。
- * 步骤4：监听设备状态变化：`observeDeviceStatus { ... }`。
+ * Step 1: Wasm cannot directly reuse Kotlin/JS's `await`, so we use Promise->suspend via `awaitWasm()`.
+ * Step 2: Call methods: `callEvenApp("getUserInfo")` or `callEvenApp("method", params)`.
+ * Step 3: Call with parameters: pass `JsAny?`; shared code can use `callEvenAppJson` with a JSON string.
+ * Step 4: Listen for device status changes: `observeDeviceStatus { ... }`.
  *
- * 注意：callEvenApp 数据结构中，params 会直接作为消息的 data 字段传递。
- * JS SDK 内部构建的消息结构：{ type: "call_even_app_method", method: method, data: params }
+ * Note: In the callEvenApp message structure, params are passed directly as the data field.
+ * JS SDK internal message structure: { type: "call_even_app_method", method: method, data: params }
  */
 actual suspend fun ensureEvenAppBridge() {
     waitForEvenAppBridge().awaitWasm()

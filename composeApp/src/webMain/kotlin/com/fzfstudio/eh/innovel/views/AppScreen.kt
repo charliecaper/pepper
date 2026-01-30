@@ -22,11 +22,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * 应用主屏幕组件。
- * 包含用户信息、设备信息和图书列表。
+ * Main app screen component.
+ * Contains user info, device info, and book list.
  *
- * @param uiState 应用 UI 状态
- * @param onStartReading 开始阅读的回调函数
+ * @param uiState App UI state
+ * @param onStartReading Callback when start reading is tapped
  */
 @Composable
 fun AppScreen(
@@ -89,7 +89,7 @@ fun AppScreen(
             book = currentBook,
             onExit = {
                 readingBook.value = null
-                // 在协程作用域中调用 suspend 函数
+                // Call suspend function in coroutine scope
                 onExitReading()
             }
         )

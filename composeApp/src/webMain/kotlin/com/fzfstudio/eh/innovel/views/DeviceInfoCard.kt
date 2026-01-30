@@ -26,12 +26,12 @@ import com.fzfstudio.eh.innovel.sdk.DeviceInfo
 import com.fzfstudio.eh.innovel.sdk.DeviceStatus
 
 /**
- * 设备信息卡片组件。
- * 用于显示设备的连接状态和基本信息。
+ * Device info card component.
+ * Displays device connection status and basic information.
  *
- * @param modifier 修饰符
- * @param deviceInfo 设备基本信息
- * @param deviceStatus 设备实时状态
+ * @param modifier Modifier
+ * @param deviceInfo Device basic information
+ * @param deviceStatus Device real-time status
  */
 @Composable
 fun DeviceInfoCard(
@@ -51,7 +51,7 @@ fun DeviceInfoCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(128.dp),
-                text = "无设备"
+                text = "No Device"
             )
         } else {
             Box(
@@ -73,10 +73,10 @@ fun DeviceInfoCard(
 }
 
 /**
- * 根据设备连接类型获取对应的状态颜色。
+ * Returns the status color for the given device connection type.
  *
- * @param connectType 设备连接类型
- * @return 对应的状态颜色
+ * @param connectType Device connection type
+ * @return Corresponding status color
  */
 @Composable
 private fun statusColor(connectType: DeviceConnectType): Color {

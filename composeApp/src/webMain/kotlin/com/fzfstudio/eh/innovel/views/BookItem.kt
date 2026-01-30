@@ -23,11 +23,11 @@ import androidx.compose.ui.unit.dp
 import com.fzfstudio.eh.innovel.models.BookModel
 
 /**
- * 图书列表项组件。
- * 显示图书的封面、标题、作者、阅读进度，并提供开始阅读按钮。
+ * Book list item component.
+ * Displays book cover, title, author, reading progress, and a start reading button.
  *
- * @param book 图书数据模型
- * @param onStartReading 开始阅读的回调函数
+ * @param book Book data model
+ * @param onStartReading Callback when start reading is tapped
  */
 @Composable
 fun BookItem(
@@ -70,7 +70,7 @@ fun BookItem(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "作者：${book.author}",
+                    text = "Author: ${book.author}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -79,13 +79,13 @@ fun BookItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "共${book.totalChapters}章",
+                        text = "${book.totalChapters} chapters",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (book.readChapters > 0)
                         Text(
-                            text = ",已读:${(book.readChapters % book.totalChapters)}%",
+                            text = ", ${(book.readChapters % book.totalChapters)}% read",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -98,7 +98,7 @@ fun BookItem(
                     onStartReading()
                 },
             ) {
-                Text(text = "开始阅读", style = MaterialTheme.typography.bodySmall)
+                Text(text = "Start Reading", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

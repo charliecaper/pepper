@@ -27,14 +27,14 @@ import kotlin.js.ExperimentalWasmJsInterop
 @Composable
 fun App() {
     InNovelTheme {
-        // 应用状态
+        // App state
         val appState = remember { AppState() }
-        // UI 状态
+        // UI state
         val uiState = appState.uiState
-        // 协程作用域，用于调用 suspend 函数
+        // Coroutine scope for calling suspend functions
         val coroutineScope = rememberCoroutineScope()
-        // 初始化桥接并获取数据
-        // 注意：设备状态监听和 EvenHubEvent 监听已在 AppState.initialize() 中设置
+        // Initialize bridge and fetch data
+        // Note: Device status and EvenHubEvent listeners are set up in AppState.initialize()
         LaunchedEffect(Unit) {
             appState.initialize()
         }
@@ -57,13 +57,13 @@ fun App() {
                 AppScreen(
                     uiState = uiState,
                     onStartReading = { book ->
-                        // 在协程作用域中调用 suspend 函数
+                        // Call suspend function within coroutine scope
                         coroutineScope.launch {
                             appState.startReadingBook(book)
                         }
                     },
                     onExitReading = {
-                        // 在协程作用域中调用 suspend 函数
+                        // Call suspend function within coroutine scope
                         coroutineScope.launch {
                             appState.exitReading()
                         }

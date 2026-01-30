@@ -24,21 +24,21 @@ import kotlinx.coroutines.launch
 import kotlin.js.js
 
 /**
- * 文本图片视图组件
- * 包含一个可调整大小的画布用于绘制立体长方形，以及测试和退出按钮
+ * Text image view component.
+ * Contains an adjustable canvas for drawing a 3D rectangle, plus test and exit buttons.
  */
 @Composable
 fun TextImageView() {
     val coroutineScope = rememberCoroutineScope()
     var containerId by remember { mutableStateOf<Int?>(null) }
     
-    // 宽高状态，默认 90
+    // Width/height state, default 90
     var width by remember { mutableStateOf(90) }
     var height by remember { mutableStateOf(90) }
     var widthText by remember { mutableStateOf("90") }
     var heightText by remember { mutableStateOf("90") }
     
-    // 计算显示尺寸（取宽高中的较大值，确保画布能完整显示）
+    // Calculate display size (use the larger of width/height to ensure canvas is fully visible)
     val displaySize = maxOf(width, height).coerceAtLeast(50).coerceAtMost(200)
     
     Column(
@@ -48,23 +48,23 @@ fun TextImageView() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // 宽高输入框
+        // Width/height input fields
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("宽 x 高", style = MaterialTheme.typography.labelMedium)
+            Text("Width x Height", style = MaterialTheme.typography.labelMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 宽度输入框
+                // Width input field
                 Column(modifier = Modifier.weight(1f)) {
                     BasicTextField(
                         value = widthText,
                         onValueChange = { newValue ->
-                            // 只允许输入数字
+                            // Only allow digits
                             if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
                                 widthText = newValue
                                 newValue.toIntOrNull()?.let { w ->
@@ -98,12 +98,12 @@ fun TextImageView() {
                     )
                 }
                 Text("x", modifier = Modifier.padding(horizontal = 4.dp))
-                // 高度输入框
+                // Height input field
                 Column(modifier = Modifier.weight(1f)) {
                     BasicTextField(
                         value = heightText,
                         onValueChange = { newValue ->
-                            // 只允许输入数字
+                            // Only allow digits
                             if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
                                 heightText = newValue
                                 newValue.toIntOrNull()?.let { h ->
@@ -139,7 +139,7 @@ fun TextImageView() {
             }
         }
         
-        // 画布（显示用，使用计算后的显示尺寸）
+        // Canvas (display only, uses calculated display size)
         Canvas(
             modifier = Modifier
                 .size(displaySize.dp)
@@ -147,7 +147,7 @@ fun TextImageView() {
             draw3DRectangleWithSize(width, height)
         }
         
-        // 测试按钮
+        // Test button
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
@@ -158,10 +158,10 @@ fun TextImageView() {
                 }
             }
         ) {
-            Text("测试上传 (${width}x${height})")
+            Text("Test Upload (${width}x${height})")
         }
         
-        // 退出按钮
+        // Exit button
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
@@ -170,24 +170,24 @@ fun TextImageView() {
                 }
             }
         ) {
-            Text("退出 EvenHub")
+            Text("Exit EvenHub")
         }
     }
 }
 
 /**
- * 绘制立体长方形（使用实际宽高）
+ * Draw a 3D rectangle (using actual width/height).
  */
 private fun DrawScope.draw3DRectangleWithSize(actualWidth: Int, actualHeight: Int) {
     val canvasWidth = size.width
     val canvasHeight = size.height
     
-    // 计算缩放比例，使内容适应画布大小
+    // Calculate scale ratio to fit content within canvas size
     val scaleX = canvasWidth / actualWidth.toFloat()
     val scaleY = canvasHeight / actualHeight.toFloat()
     val scale = minOf(scaleX, scaleY)
     
-    // 计算居中偏移
+    // Calculate centering offset
     val offsetX = (canvasWidth - actualWidth * scale) / 2f
     val offsetY = (canvasHeight - actualHeight * scale) / 2f
     
@@ -197,39 +197,39 @@ private fun DrawScope.draw3DRectangleWithSize(actualWidth: Int, actualHeight: In
     val rectX = offsetX + padding
     val rectY = offsetY + padding
     
-    // 主矩形（浅色）
+    // Main rectangle (light color)
     drawRect(
         color = Color(0xFF4A90E2),
         topLeft = Offset(rectX, rectY),
         size = Size(rectWidth, rectHeight)
     )
     
-    // 绘制立体效果 - 顶部和左侧（亮面）
+    // Draw 3D effect - top and left (light faces)
     val depth = 8f * scale
     
-    // 顶部亮面
+    // Top light face
     drawRect(
         color = Color(0xFF6BA3E8),
         topLeft = Offset(rectX, rectY),
         size = Size(rectWidth, depth)
     )
-    
-    // 左侧亮面
+
+    // Left light face
     drawRect(
         color = Color(0xFF6BA3E8),
         topLeft = Offset(rectX, rectY),
         size = Size(depth, rectHeight)
     )
-    
-    // 底部和右侧（暗面）
-    // 底部暗面
+
+    // Bottom and right (dark faces)
+    // Bottom dark face
     drawRect(
         color = Color(0xFF2E5C8A),
         topLeft = Offset(rectX, rectY + rectHeight - depth),
         size = Size(rectWidth, depth)
     )
-    
-    // 右侧暗面
+
+    // Right dark face
     drawRect(
         color = Color(0xFF2E5C8A),
         topLeft = Offset(rectX + rectWidth - depth, rectY),
@@ -238,9 +238,9 @@ private fun DrawScope.draw3DRectangleWithSize(actualWidth: Int, actualHeight: In
 }
 
 /**
- * 处理测试按钮点击事件
- * @param width 图片宽度（整数）
- * @param height 图片高度（整数）
+ * Handle test button click event.
+ * @param width Image width (integer)
+ * @param height Image height (integer)
  */
 private suspend fun handleTestButtonClick(
     width: Int,
@@ -248,7 +248,7 @@ private suspend fun handleTestButtonClick(
     onContainerCreated: (Int?) -> Unit
 ) {
     try {
-        // 1. 创建 HTML Canvas 并绘制内容（使用输入的宽高，整数尺寸）
+        // 1. Create HTML Canvas and draw content (using input width/height, integer dimensions)
         @Suppress("UNCHECKED_CAST")
         val createCanvas = js("(function(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; })") as (Int, Int) -> Any?
         val canvas = createCanvas(width, height) ?: throw Exception("Failed to create canvas")
@@ -257,15 +257,15 @@ private suspend fun handleTestButtonClick(
         val getContext = js("(function(canvas) { return canvas.getContext('2d'); })") as (Any?) -> Any?
         val ctx = getContext(canvas) ?: throw Exception("Failed to get 2D context")
         
-        // 绘制立体长方形（使用输入的宽高）
+        // Draw 3D rectangle (using input width/height)
         draw3DRectangleOnCanvas(ctx, width, height)
         
-        // 2. 将画布转换为图片数据（base64）
+        // 2. Convert canvas to image data (base64)
         @Suppress("UNCHECKED_CAST")
         val toDataURL = js("(function(canvas) { return canvas.toDataURL('image/png'); })") as (Any?) -> String
         val imageDataUrl = toDataURL(canvas)
         
-        // 3. 将 base64 转换为 ArrayBuffer
+        // 3. Convert base64 to ArrayBuffer
         val base64Data = imageDataUrl.substringAfter(",")
         @Suppress("UNCHECKED_CAST")
         val atob = js("(function(str) { return window.atob(str); })") as (String) -> String
@@ -286,14 +286,14 @@ private suspend fun handleTestButtonClick(
         val getBuffer = js("(function(arr) { return arr.buffer; })") as (Any?) -> Any?
         val arrayBuffer = getBuffer(bytes)
         
-        // 4. 创建图片容器（使用输入的宽高，整数尺寸）
+        // 4. Create image container (using input width/height, integer dimensions)
         val imageContainer = ImageContainerProperty(
-            containerID = 100, // 使用一个唯一的 ID
+            containerID = 100, // Use a unique ID
             containerName = "testImage",
             xPosition = 0,
             yPosition = 0,
-            width = width,  // 使用输入的宽度
-            height = height  // 使用输入的高度
+            width = width,  // Use input width
+            height = height  // Use input height
         )
         
         val container = CreateStartUpPageContainer(
@@ -305,11 +305,11 @@ private suspend fun handleTestButtonClick(
         onContainerCreated(createdContainerId)
         
         if (createdContainerId != null) {
-            // 5. 上传图片数据
+            // 5. Upload image data
             val imageUpdate = ImageRawDataUpdate(
                 containerID = 100,
                 containerName = "testImage",
-                imageData = arrayBuffer // 可以是 ArrayBuffer，会在 toJson 时转换为 number[]
+                imageData = arrayBuffer // Can be ArrayBuffer, converted to number[] during toJson
             )
             
             val success = updateImageRawData(imageUpdate)
@@ -327,10 +327,10 @@ private suspend fun handleTestButtonClick(
 }
 
 /**
- * 在 HTML Canvas 上绘制立体长方形
- * @param ctx Canvas 2D 上下文
- * @param width 画布宽度（整数）
- * @param height 画布高度（整数）
+ * Draw a 3D rectangle on an HTML Canvas.
+ * @param ctx Canvas 2D context
+ * @param width Canvas width (integer)
+ * @param height Canvas height (integer)
  */
 private fun draw3DRectangleOnCanvas(
     ctx: Any?,
@@ -339,7 +339,7 @@ private fun draw3DRectangleOnCanvas(
 ) {
     if (ctx == null) return
     
-    // 使用整数计算，确保没有小数点
+    // Use integer calculations to avoid decimals
     val padding = 10
     val rectWidth = width - padding * 2
     val rectHeight = height - padding * 2
@@ -352,29 +352,29 @@ private fun draw3DRectangleOnCanvas(
     @Suppress("UNCHECKED_CAST")
     val fillRect = js("(function(ctx, x, y, w, h) { ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); })") as (Any?, Double, Double, Double, Double) -> Unit
     
-    // 绘制主矩形（前面）
+    // Draw main rectangle (front face)
     setFillStyle(ctx, "#4A90E2")
     fillRect(ctx, rectX.toDouble(), rectY.toDouble(), rectWidth.toDouble(), rectHeight.toDouble())
     
-    // 顶部亮面
+    // Top light face
     setFillStyle(ctx, "#6BA3E8")
     fillRect(ctx, rectX.toDouble(), rectY.toDouble(), rectWidth.toDouble(), depth.toDouble())
-    
-    // 左侧亮面
+
+    // Left light face
     setFillStyle(ctx, "#6BA3E8")
     fillRect(ctx, rectX.toDouble(), rectY.toDouble(), depth.toDouble(), rectHeight.toDouble())
-    
-    // 底部暗面
+
+    // Bottom dark face
     setFillStyle(ctx, "#2E5C8A")
     fillRect(ctx, rectX.toDouble(), (rectY + rectHeight - depth).toDouble(), rectWidth.toDouble(), depth.toDouble())
-    
-    // 右侧暗面
+
+    // Right dark face
     setFillStyle(ctx, "#2E5C8A")
     fillRect(ctx, (rectX + rectWidth - depth).toDouble(), rectY.toDouble(), depth.toDouble(), rectHeight.toDouble())
 }
 
 /**
- * 处理退出按钮点击事件
+ * Handle exit button click event.
  */
 private suspend fun handleExitButtonClick() {
     try {

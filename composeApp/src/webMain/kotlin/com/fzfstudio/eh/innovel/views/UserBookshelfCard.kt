@@ -22,18 +22,18 @@ import androidx.compose.ui.unit.dp
 import com.fzfstudio.eh.innovel.sdk.UserInfo
 
 /**
- * 用户书架信息卡片组件。
- * 用于显示用户的头像与书架标题。
+ * User bookshelf card component.
+ * Displays the user's avatar and bookshelf title.
  *
- * @param modifier 修饰符
- * @param userInfo 用户信息数据模型
+ * @param modifier Modifier
+ * @param userInfo User information data model
  */
 @Composable
 fun UserBookshelfCard(
     modifier: Modifier = Modifier,
     userInfo: UserInfo?,
 ) {
-    val displayName = userInfo?.name ?: "我"
+    val displayName = userInfo?.name ?: "Me"
     val avatarLabel = displayName.take(1)
     Card(
         modifier = modifier,
@@ -65,12 +65,12 @@ fun UserBookshelfCard(
                     )
                 }
                 Text(
-                    text = "${displayName}的书架",
+                    text = "${displayName}'s Bookshelf",
                     style = MaterialTheme.typography.titleMedium
                 )
             }
             Text(
-                text = "图书列表信息",
+                text = "Book list",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

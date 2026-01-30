@@ -1,45 +1,45 @@
 package com.fzfstudio.eh.innovel.models
 
 /**
- * 图书信息
+ * Book information.
  */
 data class BookModel(
-    /** 图书唯一标识 */
+    /** Unique book identifier */
     val id: String,
-    /** 书名 */
+    /** Book title */
     val title: String,
-    /** 作者 */
+    /** Author */
     val author: String,
-    /** 图书类型 */
+    /** Book genre */
     val type: String,
-    /** 图书内容 */
+    /** Book chapters */
     val chapters: List<BookChapterModel> = emptyList(),
 ) {
 
-    /** 总章节数 */
+    /** Total number of chapters */
     val totalChapters: Int
         get() = chapters.size
 
-    /** 已阅读章节数 */
+    /** Number of chapters read */
     var readChapters: Int = 0;
 }
 
 /**
- *  图书 - 章节
+ * Book chapter.
  */
 data class BookChapterModel(
-    /** 所属图书Id */
+    /** Parent book ID */
     val bookId: String,
-    /** 章节索引 */
+    /** Chapter index */
     val index: Int,
-    /** 章节标题 */
+    /** Chapter title */
     val title: String,
-    /** 章节内容 */
+    /** Chapter content */
     val content: String,
-) { 
-    /** 展示内容 */
+) {
+    /** Display content (truncated preview) */
     val displayContent: String
         get() = if (content.length > 25) content.take(25) + "..." else content
-    /** 是否已经读完 */
+    /** Whether the chapter has been read */
     var hadRead: Boolean = false;
 }
