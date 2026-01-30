@@ -427,6 +427,18 @@ enum StartUpPageCreateResult {
 
 The glasses UI is built from **containers** -- rectangular regions on the 576x288 canvas. You compose a page by specifying container positions, sizes, and content, then sending the configuration to the glasses.
 
+### Critical Constraints Quick Reference
+
+> **Must-know rules before building any glasses UI:**
+>
+> - **Canvas**: 0–576 × 0–288 (all positions and sizes must fit within)
+> - **Max containers**: 4 per page
+> - **Event capture**: Exactly one container per page must have `isEventCapture: 1`
+> - **Text content**: max **1000** chars at `createStartUpPageContainer`, max **2000** chars at `textContainerUpgrade`
+> - **Container name**: max **16** characters
+> - **Image containers**: Must call `updateImageRawData` after **both** `createStartUpPageContainer` and `rebuildPageContainer` -- image data is never part of the page creation call
+> - **Image updates**: Must be **sequential** (await each `updateImageRawData` before sending the next), never concurrent
+
 ### Container Types
 
 There are three container types:
@@ -732,7 +744,7 @@ bridge.onEvenHubEvent((event) => {
 
 ## 11. Working with Images
 
-Image containers are more complex than text and list containers. The key difference is that **image data cannot be sent during page creation** -- you must create the container first, then push the image data separately.
+Image containers are more complex than text and list containers. The key difference is that **image data cannot be sent during page creation or rebuild** -- you must create/rebuild the container first, then push the image data separately via `updateImageRawData`. This applies to **both** `createStartUpPageContainer` and `rebuildPageContainer`.
 
 ### Image Workflow
 
@@ -755,6 +767,25 @@ await bridge.updateImageRawData({
   containerID: 1,
   containerName: 'img',
   imageData: myImageBytes, // number[], Uint8Array, ArrayBuffer, or base64 string
+});
+
+// 3. If you later rebuild the page with an image container,
+//    you must call updateImageRawData again:
+await bridge.rebuildPageContainer({
+  containerTotalNum: 1,
+  imageObject: [{
+    containerID: 1,
+    containerName: 'img',
+    xPosition: 0,
+    yPosition: 0,
+    width: 100,
+    height: 80,
+  }],
+});
+await bridge.updateImageRawData({
+  containerID: 1,
+  containerName: 'img',
+  imageData: myImageBytes,
 });
 ```
 
@@ -1047,7 +1078,67 @@ bridge.onEvenHubEvent((event) => {
 });
 ```
 
-### Pattern 5: Device-Aware UI
+### Pattern 5: External Control via WebSocket
+
+A common use case is controlling the glasses display from an external application (e.g., TouchDesigner, QLab, a custom controller). Since Even Hub apps run in a browser WebView, the most practical transport is **WebSocket** -- browsers cannot receive UDP (which rules out raw OSC).
+
+**Architecture:**
+
+```
++-------------------+       WebSocket        +-------------------+
+| External App      | --------------------> | Even Hub Web App  |
+| (TouchDesigner,   |  ws://host:port        | (in WebView)      |
+|  QLab via bridge,  |  JSON messages         |                   |
+|  custom script)   |                        | Updates glasses   |
++-------------------+                        +-------------------+
+```
+
+**Protocol-agnostic receiver pattern (Kotlin):**
+
+```kotlin
+// Interface -- swap implementations to change transport
+interface MessageReceiver {
+    fun connect(onMessage: (NotifyMessage) -> Unit)
+    fun disconnect()
+}
+
+// WebSocket implementation
+class WebSocketReceiver(private val url: String) : MessageReceiver {
+    override fun connect(onMessage: (NotifyMessage) -> Unit) {
+        // Connect to WebSocket, parse JSON { "text1": "...", "text2": "..." }
+        // Auto-reconnect on disconnect
+    }
+    override fun disconnect() { /* close socket */ }
+}
+```
+
+**Updating glasses from a non-coroutine callback:**
+
+When a WebSocket message arrives, you may need to call a suspend function like `rebuildPageContainer`. Use `GlobalScope.launch` (with `@OptIn(DelicateCoroutinesApi::class)`) to bridge from the callback into a coroutine:
+
+```kotlin
+receiver.connect { msg ->
+    // Update Compose state (immediate)
+    text1 = msg.text1
+    text2 = msg.text2
+    // Update glasses (needs coroutine)
+    GlobalScope.launch {
+        rebuildPageContainer(newConfig)
+    }
+}
+```
+
+**Sending from common external tools:**
+
+| Tool | Method |
+|------|--------|
+| **TouchDesigner** | WebSocket DAT -- connect to your app's WS server, send JSON |
+| **QLab** | QLab uses OSC over UDP natively. To reach a WebSocket app, use a small Node.js bridge that receives OSC/UDP and forwards as WebSocket JSON |
+| **Python script** | `websockets` library -- `await ws.send(json.dumps({"text1": "...", "text2": "..."}))` |
+| **Node.js script** | `ws` library -- `ws.send(JSON.stringify({ text1: "...", text2: "..." }))` |
+| **curl (one-shot)** | Not practical for WebSocket; use `websocat` CLI instead |
+
+### Pattern 6: Device-Aware UI
 
 Check device connection before attempting glasses operations:
 
@@ -1079,6 +1170,9 @@ await bridge.createStartUpPageContainer(config);
 | Image not showing | Image data not sent after container creation | Call `updateImageRawData` after `createStartUpPageContainer` succeeds |
 | `textContainerUpgrade` fails | Container ID/name mismatch | Ensure `containerID` and `containerName` match the original container |
 | Field name "borderRdaius" | This is the actual spelling in the SDK protobuf definition | Use `borderRdaius` (not `borderRadius`) |
+| IntelliJ shows red errors for `js()` calls | IDE cannot resolve JS interop in shared source sets (`webMain`) | These are false positives -- the code compiles fine. IntelliJ's Kotlin/Wasm and shared-source-set support is still maturing |
+| `createStartUpPageContainer` ignored on second call | It can only be called once per app session | Use `rebuildPageContainer` for all subsequent page changes |
+| Image not showing after `rebuildPageContainer` | Image data must be re-sent after every create or rebuild | Call `updateImageRawData` again after `rebuildPageContainer` returns |
 
 ### Debugging Tips
 
@@ -1241,6 +1335,15 @@ This is what the InNovel example uses. The approach requires:
 5. Parse JS objects to Kotlin data classes at the boundary
 
 See the InNovel source code for a complete working implementation of this approach.
+
+**Kotlin/Wasm development notes:**
+
+- **Source set structure**: Use a shared `webMain` source set that both `jsMain` and `wasmJsMain` depend on. Put all common app logic in `webMain` and only platform-specific `external` declarations in `jsMain`/`wasmJsMain`.
+- **IntelliJ false positives**: `js()` function calls and JS interop casts in shared source sets (`webMain`) will show red errors in IntelliJ. These are IDE resolution issues, not real errors -- the code compiles correctly. Don't let these red underlines mislead you.
+- **Node.js version**: Kotlin/Wasm builds require Node.js >= 20. The Gradle build may fail with cryptic errors on older versions.
+- **npm dependency**: Add the SDK as `implementation(npm("@evenrealities/even_hub_sdk", "^0.0.6"))` in the `webMain` dependencies block.
+- **Coroutines from callbacks**: When you need to call suspend SDK functions (like `rebuildPageContainer`) from non-coroutine callbacks (like WebSocket `onmessage`), use `GlobalScope.launch` with `@OptIn(DelicateCoroutinesApi::class)`. In Compose, prefer `LaunchedEffect` or `rememberCoroutineScope` where possible.
+- **Dev server config**: Set `devServer.port` in both `js` and `wasmJs` targets in `build.gradle.kts` to control the webpack dev server port. Set `devServer.`open` = false` to prevent auto-opening the browser.
 
 ### Vue / Svelte / Other
 The SDK exports standard ES modules. Import and use as you would any npm package. The bridge initialization is async, so initialize it in your app's startup hook and store the reference.
