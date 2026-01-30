@@ -14,7 +14,6 @@ kotlin {
             commonWebpackConfig {
                 devServer = (devServer ?: org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer()).apply {
                     port = 2000
-                    open = false
                 }
             }
         }
@@ -26,7 +25,6 @@ kotlin {
             commonWebpackConfig {
                 devServer = (devServer ?: org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer()).apply {
                     port = 2000
-                    open = false
                 }
             }
         }
