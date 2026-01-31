@@ -25,7 +25,7 @@ fun App() {
         var text1 by remember { mutableStateOf("Hello Charlie2") }
         var text2 by remember { mutableStateOf("Hello World") }
         var bridgeReady by remember { mutableStateOf(false) }
-        var showTimer by remember { mutableStateOf(true) }
+        var showTimer by remember { mutableStateOf(false) }
         var timerSeconds by remember { mutableStateOf(0) }
         var statusMessage by remember { mutableStateOf("Ready") }
         var wsConnected by remember { mutableStateOf(false) }
