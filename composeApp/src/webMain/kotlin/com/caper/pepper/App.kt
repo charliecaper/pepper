@@ -95,9 +95,12 @@ fun App() {
                                 text1 = msg.text1
                                 text2 = msg.text2
                                 if (bridgeReady) {
-                                    val minutes = timerSeconds / 60
-                                    val seconds = timerSeconds % 60
-                                    updateGlassesText(msg.text1, msg.text2, "$minutes:${seconds.toString().padStart(2, '0')}")
+                                    val timer = if (showTimer) {
+                                        val m = timerSeconds / 60
+                                        val s = timerSeconds % 60
+                                        "$m:${s.toString().padStart(2, '0')}"
+                                    } else null
+                                    updateGlassesText(msg.text1, msg.text2, timer)
                                 }
                             },
                             onCommand = { cmd ->
@@ -108,10 +111,18 @@ fun App() {
                                     }
                                     "timerOn" -> {
                                         showTimer = true
+                                        if (bridgeReady) {
+                                            val m = timerSeconds / 60
+                                            val s = timerSeconds % 60
+                                            updateGlassesText(text1, text2, "$m:${s.toString().padStart(2, '0')}")
+                                        }
                                         setStatus("Timer visible")
                                     }
                                     "timerOff" -> {
                                         showTimer = false
+                                        if (bridgeReady) {
+                                            updateGlassesText(text1, text2, null)
+                                        }
                                         setStatus("Timer hidden")
                                     }
                                     else -> setStatus("Unknown command: ${cmd.command}")
@@ -144,81 +155,59 @@ fun App() {
     }
 }
 
+private fun glassesTextContainers(text1: String, text2: String, timerText: String?): List<TextContainerProperty> {
+    val containers = mutableListOf(
+        TextContainerProperty(
+            containerID = 1,
+            containerName = "line1",
+            xPosition = 0,
+            yPosition = 0,
+            width = if (timerText != null) 440 else 576,
+            height = 144,
+            content = text1,
+            isEventCapture = 1,
+        ),
+        TextContainerProperty(
+            containerID = 2,
+            containerName = "line2",
+            xPosition = 0,
+            yPosition = 200,
+            width = 576,
+            height = 88,
+            content = text2,
+            isEventCapture = 0,
+        ),
+    )
+    if (timerText != null) {
+        containers.add(TextContainerProperty(
+            containerID = 3,
+            containerName = "timer",
+            xPosition = 450,
+            yPosition = 0,
+            width = 126,
+            height = 44,
+            content = timerText,
+            isEventCapture = 0,
+        ))
+    }
+    return containers
+}
+
 private suspend fun createGlassesContainers(text1: String, text2: String) {
+    val texts = glassesTextContainers(text1, text2, null)
     val container = CreateStartUpPageContainer(
-        containerTotalNum = 3,
-        textObject = listOf(
-            TextContainerProperty(
-                containerID = 1,
-                containerName = "line1",
-                xPosition = 0,
-                yPosition = 0,
-                width = 440,
-                height = 144,
-                content = text1,
-                isEventCapture = 1,
-            ),
-            TextContainerProperty(
-                containerID = 2,
-                containerName = "line2",
-                xPosition = 0,
-                yPosition = 200,
-                width = 576,
-                height = 88,
-                content = text2,
-                isEventCapture = 0,
-            ),
-            TextContainerProperty(
-                containerID = 3,
-                containerName = "timer",
-                xPosition = 450,
-                yPosition = 0,
-                width = 126,
-                height = 44,
-                content = "0:00",
-                isEventCapture = 0,
-            ),
-        )
+        containerTotalNum = texts.size,
+        textObject = texts,
     )
     createStartUpPageContainer(container)
 }
 
-private fun updateGlassesText(text1: String, text2: String, timerText: String) {
+private fun updateGlassesText(text1: String, text2: String, timerText: String?) {
     try {
+        val texts = glassesTextContainers(text1, text2, timerText)
         val container = RebuildPageContainer(
-            containerTotalNum = 3,
-            textObject = listOf(
-                TextContainerProperty(
-                    containerID = 1,
-                    containerName = "line1",
-                    xPosition = 0,
-                    yPosition = 0,
-                    width = 440,
-                    height = 144,
-                    content = text1,
-                    isEventCapture = 1,
-                ),
-                TextContainerProperty(
-                    containerID = 2,
-                    containerName = "line2",
-                    xPosition = 0,
-                    yPosition = 200,
-                    width = 576,
-                    height = 88,
-                    content = text2,
-                    isEventCapture = 0,
-                ),
-                TextContainerProperty(
-                    containerID = 3,
-                    containerName = "timer",
-                    xPosition = 450,
-                    yPosition = 0,
-                    width = 126,
-                    height = 44,
-                    content = timerText,
-                    isEventCapture = 0,
-                ),
-            )
+            containerTotalNum = texts.size,
+            textObject = texts,
         )
         @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
         GlobalScope.launch {
