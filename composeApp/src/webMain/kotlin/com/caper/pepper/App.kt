@@ -106,6 +106,14 @@ fun App() {
                                         timerSeconds = 0
                                         setStatus("Timer reset")
                                     }
+                                    "timerOn" -> {
+                                        showTimer = true
+                                        setStatus("Timer visible")
+                                    }
+                                    "timerOff" -> {
+                                        showTimer = false
+                                        setStatus("Timer hidden")
+                                    }
                                     else -> setStatus("Unknown command: ${cmd.command}")
                                 }
                             },
