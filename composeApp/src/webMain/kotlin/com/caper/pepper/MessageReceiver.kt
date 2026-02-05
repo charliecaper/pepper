@@ -33,10 +33,12 @@ data class NotifyMessage(
 )
 
 /**
- * Command message (e.g. {"command": "resetTimer"}).
+ * Command message (e.g. {"command": "resetTimer"} or {"command": "timerPacing", "time": "5.30"}).
  */
 data class CommandMessage(
     val command: String,
+    val time: String? = null,
+    val text: String? = null,
 )
 
 /**
@@ -157,7 +159,9 @@ class WebSocketReceiver(private val url: String) : MessageReceiver {
         return try {
             val obj = JsInteropUtils.parseJson(raw)
             val command = JsInteropUtils.getStringProperty(obj, "command")
-            if (command != null) CommandMessage(command) else null
+            val time = JsInteropUtils.getStringProperty(obj, "time")
+            val text = JsInteropUtils.getStringProperty(obj, "text")
+            if (command != null) CommandMessage(command, time, text) else null
         } catch (_: Exception) { null }
     }
 

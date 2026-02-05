@@ -1,5 +1,7 @@
 # Pepper
 
+**Version 1.0**
+
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
 ## How it works
@@ -86,11 +88,44 @@ ws.on("open", () => {
 
 ## Message format
 
+### Display updates
+
 ```json
-{"text1": "First line text", "text2": "Second line text"}
+{"text1": "Current cue text", "text2": "Next cue text"}
 ```
 
-Both fields are required. Max 1000 characters per field at initial display, 2000 on update.
+Both fields are required. Updates the two text lines on the glasses.
+
+### Commands
+
+```json
+{"command": "timerOn"}
+{"command": "timerPacing", "time": "5.30"}
+```
+
+| Command | Description |
+|---------|-------------|
+| `timerOn` | Show timer on glasses |
+| `timerOff` | Hide timer on glasses |
+| `resetTimer` | Reset timer to 0:00 (keeps pacing target if set) |
+| `timerPacing` | Set a pacing target time (format: `M.SS` or `MM.SS`) |
+| `alert` | Show an alert message on glasses (auto-dismisses after 15s) |
+
+#### Alert
+
+```json
+{"command": "alert", "text": "5 minutes left"}
+```
+
+Shows a right-aligned alert on the display. Auto-dismisses after 20 seconds, or is replaced by a new alert. Text longer than 30 characters is split into two lines. Send with empty text to clear immediately.
+
+#### Pacing mode
+
+The system timer always runs in the background. When you send a `timerPacing` command with a target time, the glasses display switches to countdown mode showing `target - elapsed`.
+
+Example: If the system timer is at 1:00 and you send `{"command": "timerPacing", "time": "5.30"}`, the glasses will show `4:30` and count down. When the system timer reaches 5:30, it shows `0:00`. If you go over, it shows negative time (e.g., `-0:15`).
+
+Use this to set checkpoints during a performance — "you should reach this cue by 5:30" — and the countdown shows how much time remains.
 
 ## Requirements
 
