@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.8**
+**Version 1.9**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
@@ -26,59 +26,63 @@ The app shows two text lines and a timer on the glasses. External tools send `{"
 
 ## Quick start
 
-### 1. Install dependencies
+### 1. Check Node.js version
+
+Make sure you have Node.js 20 or later:
+
+```bash
+node --version
+```
+
+If not installed or outdated, download from [nodejs.org](https://nodejs.org/).
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Build and run
-
-**Option A: Production server (recommended)**
+### 3. Start the server
 
 ```bash
 node tools/server.js
 ```
 
-This automatically builds the app if needed, then serves both the web app (port 2000) and WebSocket relay (port 9000). Also generates a QR code for the Even App.
+This will:
+- Build the app automatically (first time only)
+- Start the web server on port 2000
+- Start the WebSocket relay on port 9000
+- Generate and open a QR code
 
-To force a rebuild:
+To force a rebuild after code changes:
 ```bash
 node tools/server.js --rebuild
 ```
 
-**Option B: Development mode**
+### 4. Connect your glasses
 
-```bash
-# Terminal 1: WebSocket relay
-node tools/ws-relay.js
+1. Open the **Even App** on your iPhone
+2. Make sure your **Even G2 glasses** are connected to the app
+3. Scan the QR code that popped up (or manually enter the URL shown in the terminal)
+4. The Pepper app will load on your phone and glasses
+5. It will automatically connect to the WebSocket server
 
-# Terminal 2: Dev server with hot reload
-./gradlew :composeApp:jsBrowserDevelopmentRun
-```
+### 5. Test with Commander
 
-The app serves on `http://<your-ip>:2000`.
+Open `tools/commander.html` in a browser to test sending commands. This is just for testing — the real use case is connecting to show control software.
 
-### 4. Load in the Even App
+### 6. Connect to show control
 
-Scan a QR code pointing to `http://<your-ip>:2000` from the Even App. The app will appear on the phone and glasses.
+Pepper is designed to receive commands from show control software like QLab, TouchDesigner, or Keynote via WebSocket on port 9000.
 
-Tap **Connect WS** on the phone screen to connect to the relay server.
-
-### 5. Send messages
-
-**Commander GUI**: Open `tools/commander.html` in a browser. Select a command from the dropdown, fill in the fields, and click Send. Make sure the server is running first.
-
-**From TouchDesigner** (WebSocket DAT connected to `localhost:9000`):
-
+**TouchDesigner** (WebSocket DAT):
 ```python
 op('websocket1').sendText('{"text1":"Line one","text2":"Line two"}')
 ```
 
-**From QLab**: QLab speaks OSC over UDP, not WebSocket. You need a small bridge that receives OSC and forwards as WebSocket JSON. (Not yet included — contributions welcome.)
+**QLab**: Use a Network cue with a script that sends WebSocket messages, or bridge OSC to WebSocket.
 
-**From Python**:
-
+**Python**:
 ```python
 import asyncio, websockets, json
 
@@ -89,14 +93,25 @@ async def send():
 asyncio.run(send())
 ```
 
-**From Node.js**:
-
+**Node.js**:
 ```javascript
 const WebSocket = require("ws");
 const ws = new WebSocket("ws://localhost:9000");
 ws.on("open", () => {
     ws.send(JSON.stringify({ text1: "Hello", text2: "World" }));
 });
+```
+
+## Development
+
+For development with hot reload:
+
+```bash
+# Terminal 1: WebSocket relay
+node tools/ws-relay.js
+
+# Terminal 2: Dev server with hot reload
+./gradlew :composeApp:jsBrowserDevelopmentRun
 ```
 
 ## Message format
