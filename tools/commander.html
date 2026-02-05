@@ -84,7 +84,7 @@
 
   <div class="card">
     <label>WebSocket Server</label>
-    <input type="text" id="wsUrl" value="ws://localhost:9000">
+    <input type="text" id="wsUrl">
     <button id="connectBtn">Connect</button>
     <div id="status" class="status">Disconnected</div>
   </div>
@@ -253,6 +253,10 @@
     connectBtn.addEventListener("click", connect);
     sendBtn.addEventListener("click", send);
     commandSelect.addEventListener("change", renderFields);
+
+    // Set default WebSocket URL based on current page host
+    const host = window.location.hostname || "localhost";
+    wsUrlInput.value = `ws://${host}:9000`;
 
     // Initial render
     renderFields();

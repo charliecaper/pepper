@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.6**
+**Version 1.7**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
@@ -66,6 +66,8 @@ Scan a QR code pointing to `http://<your-ip>:2000` from the Even App. The app wi
 Tap **Connect WS** on the phone screen to connect to the relay server.
 
 ### 5. Send messages
+
+**Commander GUI**: Open `tools/commander.html` in a browser. Select a command from the dropdown, fill in the fields, and click Send. Make sure the server is running first.
 
 **From TouchDesigner** (WebSocket DAT connected to `localhost:9000`):
 
