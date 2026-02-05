@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper Commander</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background: #EEEEEE;
+      color: #232323;
+      padding: 24px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: normal;
+      margin: 0 0 24px 0;
+    }
+    .card {
+      background: #F6F6F6;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #7B7B7B;
+      margin-bottom: 6px;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    select, input {
+      background: #E4E4E4;
+    }
+    input:focus, select:focus {
+      outline: 2px solid #232323;
+    }
+    button {
+      background: #232323;
+      color: #FFFFFF;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover {
+      background: #444444;
+    }
+    button:disabled {
+      background: #7B7B7B;
+      cursor: not-allowed;
+    }
+    .status {
+      font-size: 13px;
+      color: #7B7B7B;
+      margin-top: 12px;
+    }
+    .status.connected {
+      color: #4BB956;
+    }
+    .status.error {
+      color: #FF453A;
+    }
+    .field {
+      margin-bottom: 12px;
+    }
+    .field:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pepper Commander</h1>
+
+  <div class="card">
+    <label>WebSocket Server</label>
+    <input type="text" id="wsUrl" value="ws://localhost:9000">
+    <button id="connectBtn">Connect</button>
+    <div id="status" class="status">Disconnected</div>
+  </div>
+
+  <div class="card">
+    <label>Command</label>
+    <select id="commandSelect">
+      <option value="text">Update Cue Text</option>
+      <option value="timerOn">Show Timer</option>
+      <option value="timerOff">Hide Timer</option>
+      <option value="resetTimer">Reset Timer</option>
+      <option value="timerPacing">Timer Pacing</option>
+      <option value="alert">Alert</option>
+    </select>
+
+    <div id="fields"></div>
+
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+
+  <script>
+    const wsUrlInput = document.getElementById("wsUrl");
+    const connectBtn = document.getElementById("connectBtn");
+    const statusDiv = document.getElementById("status");
+    const commandSelect = document.getElementById("commandSelect");
+    const fieldsDiv = document.getElementById("fields");
+    const sendBtn = document.getElementById("sendBtn");
+
+    let ws = null;
+
+    // Command definitions with their fields
+    const commands = {
+      text: {
+        fields: [
+          { name: "text1", label: "Current Cue", default: "Current Cue" },
+          { name: "text2", label: "Next Cue", default: "Next Cue" }
+        ],
+        build: (values) => ({ text1: values.text1, text2: values.text2 })
+      },
+      timerOn: {
+        fields: [],
+        build: () => ({ command: "timerOn" })
+      },
+      timerOff: {
+        fields: [],
+        build: () => ({ command: "timerOff" })
+      },
+      resetTimer: {
+        fields: [],
+        build: () => ({ command: "resetTimer" })
+      },
+      timerPacing: {
+        fields: [
+          { name: "time", label: "Target Time (M.SS)", default: "5.00" }
+        ],
+        build: (values) => ({ command: "timerPacing", time: values.time })
+      },
+      alert: {
+        fields: [
+          { name: "text", label: "Alert Text", default: "5 minutes left" }
+        ],
+        build: (values) => ({ command: "alert", text: values.text })
+      }
+    };
+
+    // Render fields for selected command
+    function renderFields() {
+      const cmd = commands[commandSelect.value];
+      fieldsDiv.innerHTML = "";
+
+      cmd.fields.forEach(field => {
+        const div = document.createElement("div");
+        div.className = "field";
+
+        const label = document.createElement("label");
+        label.textContent = field.label;
+        div.appendChild(label);
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = `field_${field.name}`;
+        input.value = field.default;
+        div.appendChild(input);
+
+        fieldsDiv.appendChild(div);
+      });
+    }
+
+    // Get field values
+    function getFieldValues() {
+      const cmd = commands[commandSelect.value];
+      const values = {};
+      cmd.fields.forEach(field => {
+        const input = document.getElementById(`field_${field.name}`);
+        values[field.name] = input ? input.value : "";
+      });
+      return values;
+    }
+
+    // Connect to WebSocket
+    function connect() {
+      if (ws) {
+        ws.close();
+        ws = null;
+        connectBtn.textContent = "Connect";
+        sendBtn.disabled = true;
+        statusDiv.textContent = "Disconnected";
+        statusDiv.className = "status";
+        return;
+      }
+
+      const url = wsUrlInput.value;
+      statusDiv.textContent = "Connecting...";
+      statusDiv.className = "status";
+
+      try {
+        ws = new WebSocket(url);
+
+        ws.onopen = () => {
+          statusDiv.textContent = "Connected to " + url;
+          statusDiv.className = "status connected";
+          connectBtn.textContent = "Disconnect";
+          sendBtn.disabled = false;
+        };
+
+        ws.onclose = () => {
+          statusDiv.textContent = "Disconnected";
+          statusDiv.className = "status";
+          connectBtn.textContent = "Connect";
+          sendBtn.disabled = true;
+          ws = null;
+        };
+
+        ws.onerror = () => {
+          statusDiv.textContent = "Connection error";
+          statusDiv.className = "status error";
+        };
+
+        ws.onmessage = (event) => {
+          console.log("Received:", event.data);
+        };
+      } catch (e) {
+        statusDiv.textContent = "Error: " + e.message;
+        statusDiv.className = "status error";
+      }
+    }
+
+    // Send command
+    function send() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        statusDiv.textContent = "Not connected";
+        statusDiv.className = "status error";
+        return;
+      }
+
+      const cmd = commands[commandSelect.value];
+      const values = getFieldValues();
+      const message = cmd.build(values);
+
+      ws.send(JSON.stringify(message));
+      statusDiv.textContent = "Sent: " + JSON.stringify(message);
+      statusDiv.className = "status connected";
+    }
+
+    // Event listeners
+    connectBtn.addEventListener("click", connect);
+    sendBtn.addEventListener("click", send);
+    commandSelect.addEventListener("change", renderFields);
+
+    // Initial render
+    renderFields();
+  </script>
+</body>
+</html>
