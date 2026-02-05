@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.0**
+**Version 1.1**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
@@ -32,17 +32,24 @@ The app shows two text lines and a timer on the glasses. External tools send `{"
 npm install
 ```
 
-### 2. Start the WebSocket relay server
+### 2. Build and run
+
+**Option A: Production server (recommended)**
 
 ```bash
-node tools/ws-relay.js
+./gradlew :composeApp:jsBrowserDistribution
+node tools/server.js
 ```
 
-This starts a WebSocket server on port 9000 that relays messages between your control tool and the app.
+This builds the app and runs a single server that serves both the web app (port 2000) and WebSocket relay (port 9000).
 
-### 3. Start the dev server
+**Option B: Development mode**
 
 ```bash
+# Terminal 1: WebSocket relay
+node tools/ws-relay.js
+
+# Terminal 2: Dev server with hot reload
 ./gradlew :composeApp:jsBrowserDevelopmentRun
 ```
 
