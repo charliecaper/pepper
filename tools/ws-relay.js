@@ -1,7 +1,8 @@
 const WebSocket = require("ws");
-const port = 9000;
-const wss = new WebSocket.Server({ port });
 
+const WS_PORT = 9000;
+
+const wss = new WebSocket.Server({ port: WS_PORT });
 const clients = new Set();
 
 wss.on("connection", (ws) => {
@@ -24,4 +25,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-console.log(`WebSocket relay server running on ws://localhost:${port}`);
+console.log(`WebSocket relay server running on ws://localhost:${WS_PORT}`);
+console.log(`\nFor development, run in another terminal:`);
+console.log(`  ./gradlew :composeApp:jsBrowserDevelopmentRun`);

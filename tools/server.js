@@ -1,10 +1,43 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
+const { exec } = require("child_process");
 const WebSocket = require("ws");
 
 const HTTP_PORT = 2000;
 const WS_PORT = 9000;
+
+// Get local IP address
+function getLocalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "localhost";
+}
+
+// Generate QR code and open it
+function generateQRCode(url) {
+  const qrPath = path.join(__dirname, "even.png");
+  exec(`qrencode -o "${qrPath}" "${url}"`, (err) => {
+    if (err) {
+      console.log(`QR code generation failed (install qrencode): ${err.message}`);
+      return;
+    }
+    console.log(`QR code saved to ${qrPath}`);
+    // Open the image (macOS)
+    exec(`open "${qrPath}"`, (openErr) => {
+      if (openErr) {
+        console.log(`Could not open QR code: ${openErr.message}`);
+      }
+    });
+  });
+}
 
 // Static file serving
 const STATIC_DIR = path.join(__dirname, "../composeApp/build/dist/js/productionExecutable");
@@ -53,8 +86,12 @@ const httpServer = http.createServer((req, res) => {
   });
 });
 
+const localIP = getLocalIP();
+const appURL = `http://${localIP}:${HTTP_PORT}/`;
+
 httpServer.listen(HTTP_PORT, "0.0.0.0", () => {
-  console.log(`HTTP server running on http://0.0.0.0:${HTTP_PORT}`);
+  console.log(`HTTP server running on ${appURL}`);
+  generateQRCode(appURL);
 });
 
 // WebSocket relay
