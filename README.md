@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.0.4**
+**Version 1.0.5**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
@@ -159,7 +159,6 @@ Use this to set checkpoints during a performance — "you should reach this cue 
 
 - **Node.js 20+**
 - **JDK 24** (for building)
-- **qrencode** (optional, for QR code generation: `brew install qrencode`)
 - Even G2 glasses + Even App on iPhone
 
 ## Project layout

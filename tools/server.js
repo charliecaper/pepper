@@ -2,8 +2,9 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { exec, spawn } = require("child_process");
+const { spawn } = require("child_process");
 const WebSocket = require("ws");
+const QRCode = require("qrcode");
 
 const HTTP_PORT = 2000;
 const WS_PORT = 9000;
@@ -32,13 +33,14 @@ function getLocalIP() {
 // Generate QR code and open it
 function generateQRCode(url) {
   const qrPath = path.join(__dirname, "even.png");
-  exec(`qrencode -o "${qrPath}" "${url}"`, (err) => {
+  QRCode.toFile(qrPath, url, { width: 300 }, (err) => {
     if (err) {
-      console.log(`QR code generation failed (install qrencode): ${err.message}`);
+      console.log(`QR code generation failed: ${err.message}`);
       return;
     }
     console.log(`QR code saved to ${qrPath}`);
     // Open the image (macOS)
+    const { exec } = require("child_process");
     exec(`open "${qrPath}"`, (openErr) => {
       if (openErr) {
         console.log(`Could not open QR code: ${openErr.message}`);
