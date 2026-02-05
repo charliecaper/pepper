@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.9**
+**Version 1.0.2**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
