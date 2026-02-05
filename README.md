@@ -1,6 +1,6 @@
 # Pepper
 
-**Version 1.4**
+**Version 1.5**
 
 A teleprompter for **Even G2 smart glasses**, controlled remotely via WebSocket. Designed for live performance — send text cues from QLab, TouchDesigner, or any tool that can send JSON over WebSocket.
 
@@ -41,6 +41,11 @@ node tools/server.js
 ```
 
 This automatically builds the app if needed, then serves both the web app (port 2000) and WebSocket relay (port 9000). Also generates a QR code for the Even App.
+
+To force a rebuild:
+```bash
+node tools/server.js --rebuild
+```
 
 **Option B: Development mode**
 

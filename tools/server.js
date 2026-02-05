@@ -8,6 +8,10 @@ const WebSocket = require("ws");
 const HTTP_PORT = 2000;
 const WS_PORT = 9000;
 
+// Parse command line args
+const args = process.argv.slice(2);
+const forceRebuild = args.includes("--rebuild") || args.includes("-r");
+
 // Static file serving
 const PROJECT_ROOT = path.join(__dirname, "..");
 const STATIC_DIR = path.join(PROJECT_ROOT, "composeApp/build/dist/js/productionExecutable");
@@ -43,16 +47,21 @@ function generateQRCode(url) {
   });
 }
 
-// Check if build exists, run gradle if not
+// Check if build exists, run gradle if not (or if --rebuild flag)
 function ensureBuild(callback) {
   const indexPath = path.join(STATIC_DIR, "index.html");
-  if (fs.existsSync(indexPath)) {
+  if (fs.existsSync(indexPath) && !forceRebuild) {
     console.log("Production build found.");
     callback();
     return;
   }
 
-  console.log("Production build not found. Building...");
+  if (forceRebuild) {
+    console.log("Rebuilding (--rebuild flag)...");
+  } else {
+    console.log("Production build not found. Building...");
+  }
+
   const gradlew = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
   const build = spawn(gradlew, [":composeApp:jsBrowserDistribution"], {
     cwd: PROJECT_ROOT,
