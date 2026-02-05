@@ -130,6 +130,80 @@ fun App() {
             }
         }
 
+        // Connect to WebSocket
+        fun connectWebSocket() {
+            if (wsConnected) return
+            receiver.connect(
+                onMessage = { msg ->
+                    text1 = msg.text1
+                    text2 = msg.text2
+                    if (bridgeReady) {
+                        val timer = if (showTimer) formatTimerDisplay() else null
+                        updateGlassesDisplay(msg.text1, msg.text2, timer, alertText)
+                    }
+                },
+                onCommand = { cmd ->
+                    when (cmd.command) {
+                        "resetTimer" -> {
+                            timerSeconds = 0
+                            setStatus("Timer reset")
+                        }
+                        "timerOn" -> {
+                            showTimer = true
+                            if (bridgeReady) {
+                                updateGlassesDisplay(text1, text2, formatTimerDisplay(), alertText)
+                            }
+                            setStatus("Timer visible")
+                        }
+                        "timerOff" -> {
+                            showTimer = false
+                            if (bridgeReady) {
+                                updateGlassesDisplay(text1, text2, null, alertText)
+                            }
+                            setStatus("Timer hidden")
+                        }
+                        "timerPacing" -> {
+                            val targetSecs = parseTimeArg(cmd.time)
+                            if (targetSecs != null) {
+                                pacingTargetSeconds = targetSecs
+                                showTimer = true
+                                if (bridgeReady) {
+                                    updateGlassesDisplay(text1, text2, formatTimerDisplay(), alertText)
+                                }
+                                setStatus("Pacing: ${cmd.time}")
+                            } else {
+                                setStatus("Invalid time format: ${cmd.time}")
+                            }
+                        }
+                        "alert" -> {
+                            val newAlertText = cmd.text
+                            if (newAlertText != null && newAlertText.isNotEmpty()) {
+                                alertText = newAlertText
+                                alertTimestamp = currentTimeMs().toLong()
+                                if (bridgeReady) {
+                                    updateGlassesDisplay(text1, text2, if (showTimer) formatTimerDisplay() else null, newAlertText)
+                                }
+                                setStatus("Alert: $newAlertText")
+                            } else {
+                                alertText = null
+                                alertTimestamp = 0L
+                                if (bridgeReady) {
+                                    updateGlassesDisplay(text1, text2, if (showTimer) formatTimerDisplay() else null, null)
+                                }
+                                setStatus("Alert cleared")
+                            }
+                        }
+                        else -> setStatus("Unknown command: ${cmd.command}")
+                    }
+                },
+                onStatus = { msg ->
+                    setStatus(msg)
+                    wsConnected = msg.startsWith("Connected")
+                },
+            )
+            wsConnected = true
+        }
+
         // System timer always runs in background
         LaunchedEffect(Unit) {
             while (true) {
@@ -155,6 +229,8 @@ fun App() {
                 createGlassesContainers(text1, text2)
                 bridgeReady = true
                 setStatus("Glasses ready")
+                // Auto-connect to WebSocket on startup
+                connectWebSocket()
             } catch (e: Exception) {
                 setStatus("Glasses init failed: ${e.message}")
             }
@@ -237,76 +313,7 @@ fun App() {
             Button(
                 onClick = {
                     if (!wsConnected) {
-                        receiver.connect(
-                            onMessage = { msg ->
-                                text1 = msg.text1
-                                text2 = msg.text2
-                                if (bridgeReady) {
-                                    val timer = if (showTimer) formatTimerDisplay() else null
-                                    updateGlassesDisplay(msg.text1, msg.text2, timer, alertText)
-                                }
-                            },
-                            onCommand = { cmd ->
-                                when (cmd.command) {
-                                    "resetTimer" -> {
-                                        timerSeconds = 0
-                                        setStatus("Timer reset")
-                                    }
-                                    "timerOn" -> {
-                                        showTimer = true
-                                        if (bridgeReady) {
-                                            updateGlassesDisplay(text1, text2, formatTimerDisplay(), alertText)
-                                        }
-                                        setStatus("Timer visible")
-                                    }
-                                    "timerOff" -> {
-                                        showTimer = false
-                                        if (bridgeReady) {
-                                            updateGlassesDisplay(text1, text2, null, alertText)
-                                        }
-                                        setStatus("Timer hidden")
-                                    }
-                                    "timerPacing" -> {
-                                        val targetSecs = parseTimeArg(cmd.time)
-                                        if (targetSecs != null) {
-                                            pacingTargetSeconds = targetSecs
-                                            showTimer = true
-                                            if (bridgeReady) {
-                                                updateGlassesDisplay(text1, text2, formatTimerDisplay(), alertText)
-                                            }
-                                            setStatus("Pacing: ${cmd.time}")
-                                        } else {
-                                            setStatus("Invalid time format: ${cmd.time}")
-                                        }
-                                    }
-                                    "alert" -> {
-                                        val newAlertText = cmd.text
-                                        if (newAlertText != null && newAlertText.isNotEmpty()) {
-                                            alertText = newAlertText
-                                            alertTimestamp = currentTimeMs().toLong()
-                                            if (bridgeReady) {
-                                                updateGlassesDisplay(text1, text2, if (showTimer) formatTimerDisplay() else null, newAlertText)
-                                            }
-                                            setStatus("Alert: $newAlertText")
-                                        } else {
-                                            // Empty text clears the alert
-                                            alertText = null
-                                            alertTimestamp = 0L
-                                            if (bridgeReady) {
-                                                updateGlassesDisplay(text1, text2, if (showTimer) formatTimerDisplay() else null, null)
-                                            }
-                                            setStatus("Alert cleared")
-                                        }
-                                    }
-                                    else -> setStatus("Unknown command: ${cmd.command}")
-                                }
-                            },
-                            onStatus = { msg ->
-                                setStatus(msg)
-                                wsConnected = msg.startsWith("Connected")
-                            },
-                        )
-                        wsConnected = true
+                        connectWebSocket()
                     } else {
                         receiver.disconnect()
                         wsConnected = false
