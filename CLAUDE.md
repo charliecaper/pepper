@@ -12,14 +12,17 @@ Pepper is a WebSocket-controlled teleprompter for Even G2 smart glasses. Externa
 # Install npm dependencies (required first)
 npm install
 
-# Start the WebSocket relay server (port 9000)
+# Production: Combined HTTP + WebSocket server (auto-builds if needed)
+node tools/server.js
+
+# Production: Force rebuild
+node tools/server.js --rebuild
+
+# Development: WebSocket relay only
 node tools/ws-relay.js
 
-# Start dev server (Kotlin/JS, serves on port 2000)
+# Development: Dev server with hot reload (run in separate terminal)
 ./gradlew :composeApp:jsBrowserDevelopmentRun
-
-# Start dev server (Kotlin/Wasm, experimental)
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun
 
 # Run tests
 ./gradlew :composeApp:jsTest
@@ -27,8 +30,14 @@ node tools/ws-relay.js
 
 ## Requirements
 
-- JDK 24
-- Node.js >= 20
+- Node.js 20+
+- JDK 24 (for building)
+
+## Tools
+
+- **`tools/server.js`** — Combined HTTP (port 2000) + WebSocket relay (port 9000), auto-builds, generates QR code
+- **`tools/ws-relay.js`** — WebSocket relay only (for development)
+- **`tools/commander.html`** — GUI for testing WebSocket commands
 
 ## Architecture
 
@@ -37,7 +46,7 @@ node tools/ws-relay.js
 The project uses Kotlin Multiplatform with a custom source set hierarchy (default hierarchy is disabled in `gradle.properties`):
 
 ```
-commonMain        Shared theme (Material3 + MiSans font)
+commonMain        Shared theme (Even OS design system, FK Grotesk font)
   └── webMain     Shared browser code: App UI, WebSocket receiver, SDK bridge (expect declarations)
        ├── jsMain        Kotlin/JS actual implementations (asDynamic(), await())
        └── wasmJsMain    Kotlin/Wasm actual implementations (@JsFun, suspendCancellableCoroutine)
@@ -45,42 +54,48 @@ commonMain        Shared theme (Material3 + MiSans font)
 
 ### Message Flow
 
-1. External tool sends JSON to `ws-relay.js` (port 9000)
-2. Relay broadcasts to all connected WebSocket clients
+1. External tool sends JSON to WebSocket server (port 9000)
+2. Server broadcasts to all connected WebSocket clients
 3. `MessageReceiver.kt` (WebSocketReceiver) receives and parses messages
 4. `App.kt` updates Compose state and calls `rebuildPageContainer()` via the Even Hub SDK bridge
 5. Even App sends display update to glasses over BLE
 
 ### Key Source Files
 
-- **`composeApp/src/webMain/.../App.kt`** — Main Composable: manages glasses containers (text1, text2, timer), handles WebSocket messages and commands, calls SDK to update display
-- **`composeApp/src/webMain/.../MessageReceiver.kt`** — WebSocketReceiver: connects to relay, auto-reconnects after 3s, parses `NotifyMessage` (text updates) and `CommandMessage` (resetTimer, timerOn, timerOff)
-- **`composeApp/src/webMain/.../sdk/EvenHubBridge.kt`** — expect interface for Even App SDK methods (createStartUpPageContainer, rebuildPageContainer, observeDeviceStatus)
-- **`composeApp/src/webMain/.../sdk/EvenHubTypes.kt`** — Data models for SDK types (DeviceStatus, TextContainerProperty, CreateStartUpPageContainer, RebuildPageContainer)
-- **`composeApp/src/webMain/.../sdk/JsInteropUtils.kt`** — Type conversion utilities for JS interop (property access, JSON building, Fetch wrappers)
-- **`tools/ws-relay.js`** — Node.js WebSocket relay server
+- **`composeApp/src/webMain/.../App.kt`** — Main Composable: manages glasses containers (text1, text2, timer, alert), handles WebSocket messages and commands, calls SDK to update display
+- **`composeApp/src/webMain/.../MessageReceiver.kt`** — WebSocketReceiver: connects to relay, auto-reconnects after 3s, parses `NotifyMessage` (text updates) and `CommandMessage`
+- **`composeApp/src/webMain/.../sdk/EvenHubBridge.kt`** — expect interface for Even App SDK methods
+- **`composeApp/src/webMain/.../sdk/EvenHubTypes.kt`** — Data models for SDK types
+- **`composeApp/src/commonMain/.../theme/Theme.kt`** — Even OS 2.0 design system colors and typography
 
 ### Glasses Display Layout
 
-The app manages 3 containers on the glasses:
+The app manages up to 4 containers on the glasses:
 - Container 1: Line 1 (text1) — width varies based on timer visibility (440px with timer, 576px without)
 - Container 2: Line 2 (text2) — 576px wide
-- Container 3: Timer (optional) — 126px wide, toggled via commands
+- Container 3: Timer (optional) — 126px wide, supports pacing countdown
+- Container 4: Alert (optional) — right-aligned, auto-dismisses after 20s
 
 ### WebSocket Protocol
 
-Display updates: `{"text1": "...", "text2": "..."}`
-Commands: `{"command": "resetTimer"}`, `{"command": "timerOn"}`, `{"command": "timerOff"}`
+Display updates:
+```json
+{"text1": "...", "text2": "..."}
+```
 
-### SDK Bridge Pattern
+Commands:
+```json
+{"command": "timerOn"}
+{"command": "timerOff"}
+{"command": "resetTimer"}
+{"command": "timerPacing", "time": "5.30"}
+{"command": "alert", "text": "..."}
+```
 
-The Even Hub SDK integration uses expect/actual across platforms:
-- **Kotlin/JS** (`jsMain`): Uses `external class EvenAppBridge` from npm, `asDynamic()`, direct `await()` on Promises
-- **Kotlin/Wasm** (`wasmJsMain`): Uses `@JsFun` annotations, `suspendCancellableCoroutine` for Promise-to-suspend conversion
+### Design System
 
-### Build Configuration
-
-- Gradle version catalog at `gradle/libs.versions.toml` (Kotlin 2.2.21, Compose 1.9.3)
-- Webpack dev server configured in `composeApp/webpack.config.d/` (host 0.0.0.0, all hosts allowed for LAN access)
-- `resolve-even-hub-sdk.js` handles scoped npm package resolution for webpack
-- Even App manifest at `app.json` (package ID: com.caper.pepper)
+Phone UI follows Even OS 2.0 design guidelines (`information/design_instructions.md`):
+- FK Grotesk font
+- Specific color palette (primary text #232323, backgrounds #EEEEEE/#F6F6F6)
+- 6px corner radius, 12px margins
+- Modal overlay for commands list
